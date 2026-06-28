@@ -4,7 +4,6 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#FBFAF7">
-  <!-- Damit es nach "Zum Home-Bildschirm" wie eine App aussieht (iOS): -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Einkaufsliste">
@@ -14,171 +13,146 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
-  <style>
-    /* ---------- Farb- und Design-Bausteine ---------- */
-    :root{
-      --bg:#FBFAF7;          /* warmes Off-White */
-      --surface:#FFFFFF;
-      --ink:#2A2622;         /* tiefes, warmes Fast-Schwarz */
-      --ink-soft:#6B6359;    /* gedämpfter Text */
-      --muted:#B6AFA4;       /* erledigte Einträge */
-      --line:#ECE7DF;        /* feine Linien */
-      --accent:#E08A2B;      /* Honig-Amber = Aktion / "zu kaufen" */
-      --accent-deep:#B86F1C; /* gedrückt / Fokus */
-      --accent-tint:#FBEFD9;
-      --ok:#5E9C6B;          /* ruhiges Grün = erledigt */
-      --danger:#C8553D;      /* löschen (sparsam) */
-      --radius:14px;
-      --shadow:0 1px 2px rgba(42,38,34,.05), 0 6px 16px rgba(42,38,34,.04);
-    }
+  <!-- QR-Code-Bibliothek (stellt global "QRCode" bereit) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
+  <style>
+    :root{
+      --bg:#FBFAF7; --surface:#FFFFFF;
+      --ink:#2A2622; --ink-soft:#6B6359; --muted:#B6AFA4; --line:#ECE7DF;
+      --accent:#E08A2B; --accent-deep:#B86F1C; --accent-tint:#FBEFD9;
+      --ok:#5E9C6B; --danger:#C8553D;
+      --radius:13px; --shadow:0 1px 2px rgba(42,38,34,.05), 0 5px 14px rgba(42,38,34,.035);
+    }
     *{box-sizing:border-box;}
     html,body{height:100%;margin:0;}
-    body{
-      background:var(--bg);
-      color:var(--ink);
-      font-family:"Inter",system-ui,-apple-system,sans-serif;
-      -webkit-font-smoothing:antialiased;
-    }
+    body{background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;}
 
-    .app{
-      height:100dvh;
-      max-width:560px;
-      margin:0 auto;
-      display:flex;
-      flex-direction:column;
-      background:var(--bg);
-    }
+    .app{height:100dvh;max-width:560px;margin:0 auto;display:flex;flex-direction:column;}
 
-    /* ---------- Kopfzeile ---------- */
+    /* Kopfzeile mit Gruppen-Umschalter */
     header{
-      flex:0 0 auto;
-      padding:calc(env(safe-area-inset-top) + 18px) 20px 14px;
-      border-bottom:1px solid var(--line);
-      display:flex;
-      align-items:baseline;
-      justify-content:space-between;
-      gap:12px;
+      flex:0 0 auto;padding:calc(env(safe-area-inset-top) + 16px) 18px 12px;
+      border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;
     }
-    h1{
-      font-family:"Bricolage Grotesque",sans-serif;
-      font-weight:700;
-      font-size:1.5rem;
-      letter-spacing:-.02em;
-      margin:0;
+    .group-switch{
+      display:inline-flex;align-items:center;gap:6px;background:transparent;border:none;cursor:pointer;
+      padding:5px 7px;margin:-5px -7px;border-radius:10px;min-width:0;
     }
-    .status{
-      display:inline-flex;align-items:center;gap:7px;
-      font-size:.78rem;color:var(--ink-soft);white-space:nowrap;
+    .group-switch:hover{background:var(--accent-tint);}
+    .group-name{
+      font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:1.3rem;letter-spacing:-.02em;
+      color:var(--ink);max-width:58vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
     }
-    .status .dot{
-      width:8px;height:8px;border-radius:50%;background:var(--accent);
-      transition:background .2s ease;
-    }
+    .group-switch svg{width:18px;height:18px;color:var(--ink-soft);flex:0 0 auto;}
+    .status{display:inline-flex;align-items:center;gap:7px;font-size:.76rem;color:var(--ink-soft);white-space:nowrap;flex:0 0 auto;}
+    .status .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);transition:background .2s ease;}
 
-    /* ---------- Listenbereich ---------- */
-    main{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 12px 16px;}
-
-    .list-label{
-      font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
-      color:var(--ink-soft);margin:14px 8px 6px;
-    }
+    /* Listenbereich – dichter als zuvor */
+    main{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:6px 12px 14px;}
+    .list-label{font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);margin:10px 8px 4px;}
     .list{list-style:none;margin:0;padding:0;}
 
     .item{
-      display:flex;align-items:center;gap:13px;
-      background:var(--surface);
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      padding:13px 12px 13px 14px;
-      margin:7px 0;
-      box-shadow:var(--shadow);
-      transition:background .18s ease, border-color .18s ease, opacity .18s ease;
+      display:flex;align-items:center;gap:11px;background:var(--surface);
+      border:1px solid var(--line);border-radius:var(--radius);
+      padding:9px 10px 9px 12px;margin:3px 0;box-shadow:var(--shadow);
+      transition:background .18s ease,border-color .18s ease;
     }
     .item.done{background:transparent;border-color:transparent;box-shadow:none;}
 
-    /* runder Haken-Knopf */
     .check{
-      flex:0 0 auto;width:27px;height:27px;border-radius:50%;
-      border:2px solid var(--accent);background:transparent;
-      display:grid;place-items:center;cursor:pointer;padding:0;
-      transition:background .18s ease, border-color .18s ease;
+      flex:0 0 auto;width:24px;height:24px;border-radius:50%;border:2px solid var(--accent);
+      background:transparent;display:grid;place-items:center;cursor:pointer;padding:0;
+      transition:background .18s ease,border-color .18s ease;
     }
-    .check::after{
-      content:"";width:9px;height:5px;
-      border-left:2.5px solid #fff;border-bottom:2.5px solid #fff;
-      transform:rotate(-45deg) scale(0);margin-top:-2px;
-      transition:transform .18s ease;
-    }
+    .check::after{content:"";width:8px;height:4px;border-left:2.4px solid #fff;border-bottom:2.4px solid #fff;transform:rotate(-45deg) scale(0);margin-top:-2px;transition:transform .18s ease;}
     .item.done .check{background:var(--ok);border-color:var(--ok);}
     .item.done .check::after{transform:rotate(-45deg) scale(1);}
 
-    .name{
-      flex:1;font-size:1.06rem;line-height:1.3;color:var(--ink);
-      word-break:break-word;transition:color .18s ease;
-    }
+    .name{flex:1;font-size:1rem;line-height:1.3;color:var(--ink);word-break:break-word;transition:color .18s ease;}
     .item.done .name{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--muted);}
 
-    .del{
-      flex:0 0 auto;width:34px;height:34px;border:none;background:transparent;
-      color:var(--muted);font-size:1.4rem;line-height:1;cursor:pointer;border-radius:9px;
-      transition:color .15s ease, background .15s ease;
-    }
+    .del{flex:0 0 auto;width:30px;height:30px;border:none;background:transparent;color:var(--muted);font-size:1.25rem;line-height:1;cursor:pointer;border-radius:8px;transition:color .15s,background .15s;}
     .del:hover{color:var(--danger);background:#FAF2EF;}
 
-    .divider{display:flex;align-items:center;gap:12px;margin:22px 8px 4px;}
-    .divider span{
-      font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
-    }
+    .divider{display:flex;align-items:center;gap:12px;margin:14px 8px 2px;}
+    .divider span{font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
     .divider::after{content:"";flex:1;height:1px;background:var(--line);}
 
-    /* ---------- Leerer Zustand ---------- */
-    .empty{text-align:center;padding:64px 24px;color:var(--ink-soft);}
-    .empty svg{width:46px;height:46px;color:var(--accent);opacity:.85;margin-bottom:14px;}
-    .empty-title{font-family:"Bricolage Grotesque",sans-serif;font-weight:600;font-size:1.15rem;color:var(--ink);margin:0 0 6px;}
-    .empty-sub{margin:0;font-size:.95rem;}
+    .empty{text-align:center;padding:48px 24px;color:var(--ink-soft);}
+    .empty svg{width:42px;height:42px;color:var(--accent);opacity:.85;margin-bottom:12px;}
+    .empty-title{font-family:"Bricolage Grotesque",sans-serif;font-weight:600;font-size:1.1rem;color:var(--ink);margin:0 0 5px;}
+    .empty-sub{margin:0;font-size:.92rem;}
 
-    /* ---------- Eingabezeile unten ---------- */
-    .composer{
-      flex:0 0 auto;display:flex;gap:9px;align-items:center;
-      padding:12px 14px calc(env(safe-area-inset-bottom) + 12px);
-      border-top:1px solid var(--line);background:var(--bg);
-    }
-    .composer input{
-      flex:1;font-size:16px;font-family:inherit;color:var(--ink);
-      padding:13px 15px;border:1.5px solid var(--line);border-radius:12px;
-      background:var(--surface);outline:none;transition:border-color .15s ease;
-    }
+    /* Eingabezeile unten */
+    .composer{flex:0 0 auto;display:flex;gap:9px;align-items:center;padding:11px 14px calc(env(safe-area-inset-bottom) + 11px);border-top:1px solid var(--line);background:var(--bg);}
+    .composer input{flex:1;font-size:16px;font-family:inherit;color:var(--ink);padding:12px 15px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);outline:none;transition:border-color .15s;}
     .composer input:focus{border-color:var(--accent);}
     .composer input::placeholder{color:var(--muted);}
-    .composer button{
-      flex:0 0 auto;width:50px;height:50px;border:none;border-radius:13px;
-      background:var(--accent);color:#fff;font-size:1.7rem;line-height:1;cursor:pointer;
-      display:grid;place-items:center;transition:background .15s ease, transform .08s ease;
-    }
+    .composer button{flex:0 0 auto;width:48px;height:48px;border:none;border-radius:13px;background:var(--accent);color:#fff;font-size:1.6rem;line-height:1;cursor:pointer;display:grid;place-items:center;transition:background .15s,transform .08s;}
     .composer button:hover{background:var(--accent-deep);}
     .composer button:active{transform:scale(.94);}
 
-    /* ---------- Hinweis-Banner (Fehler / Einrichtung) ---------- */
-    .overlay{
-      position:fixed;inset:0;background:rgba(42,38,34,.5);
-      display:grid;place-items:center;padding:24px;z-index:50;
-    }
-    .card{
-      background:var(--surface);border-radius:18px;padding:26px 24px;max-width:380px;
-      box-shadow:0 20px 50px rgba(42,38,34,.25);
-    }
+    .banner{margin:8px 12px 0;padding:11px 14px;border-radius:11px;background:var(--accent-tint);border:1px solid #EAD3A6;color:#7A551B;font-size:.88rem;line-height:1.4;}
+
+    /* Buttons */
+    .btn-primary{background:var(--accent);color:#fff;border:none;border-radius:12px;padding:13px 18px;font:inherit;font-weight:600;font-size:1rem;cursor:pointer;transition:background .15s;}
+    .btn-primary:hover{background:var(--accent-deep);}
+    .btn-primary:disabled{opacity:.6;cursor:default;}
+    .btn-ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line);border-radius:12px;padding:13px 18px;font:inherit;font-weight:600;font-size:1rem;cursor:pointer;transition:background .15s;}
+    .btn-ghost:hover{background:#F3EFE8;}
+
+    /* Willkommen (noch keine Gruppe) */
+    .welcome{position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;padding:28px;z-index:30;}
+    .welcome-inner{max-width:360px;width:100%;text-align:center;}
+    .welcome-inner .logo{width:54px;height:54px;color:var(--accent);margin:0 auto 14px;}
+    .welcome-inner h1{font-family:"Bricolage Grotesque",sans-serif;font-size:1.9rem;margin:0 0 10px;letter-spacing:-.02em;}
+    .welcome-inner p{color:var(--ink-soft);line-height:1.55;margin:0 0 24px;}
+    .welcome-inner .btn-primary,.welcome-inner .btn-ghost{display:block;width:100%;margin:10px 0;}
+
+    /* Hintergrund-Abdunkelung für Menüs/Dialoge */
+    .backdrop{position:fixed;inset:0;background:rgba(42,38,34,.45);z-index:40;}
+
+    /* Bottom-Sheet (Gruppenmenü) */
+    .sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--surface);border-radius:20px 20px 0 0;padding:8px 18px calc(env(safe-area-inset-bottom) + 16px);max-width:560px;margin:0 auto;box-shadow:0 -10px 40px rgba(42,38,34,.18);}
+    .sheet-handle{width:38px;height:4px;background:var(--line);border-radius:99px;margin:6px auto 10px;}
+    .sheet-title{font-family:"Bricolage Grotesque",sans-serif;font-size:1.15rem;margin:0 0 6px;}
+    .row-action{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:transparent;border:none;padding:13px 6px;font:inherit;font-size:1rem;color:var(--ink);cursor:pointer;border-radius:10px;}
+    .row-action:hover{background:#F3EFE8;}
+    .row-action.danger{color:var(--danger);}
+    .row-action .ico{width:20px;text-align:center;color:var(--ink-soft);font-size:1.1rem;}
+    .row-action.danger .ico{color:var(--danger);}
+    .sheet hr{border:none;border-top:1px solid var(--line);margin:8px 0;}
+
+    .group-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 6px;border-radius:10px;cursor:pointer;}
+    .group-item:hover{background:#F3EFE8;}
+    .gi-name{font-weight:600;}
+    .gi-code{font-size:.78rem;color:var(--ink-soft);margin-top:1px;}
+    .group-item.active .gi-name{color:var(--accent-deep);}
+    .gi-check{width:18px;height:18px;color:var(--accent);flex:0 0 auto;}
+
+    /* Zentrierter Dialog */
+    .modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:50;background:var(--surface);border-radius:18px;padding:24px 22px;width:calc(100% - 44px);max-width:380px;box-shadow:0 20px 50px rgba(42,38,34,.25);}
+    .modal h2{font-family:"Bricolage Grotesque",sans-serif;font-size:1.3rem;margin:0 0 8px;}
+    .modal p{color:var(--ink-soft);font-size:.95rem;line-height:1.5;margin:0 0 16px;}
+    .modal input{width:100%;font-size:16px;font-family:inherit;padding:13px 15px;border:1.5px solid var(--line);border-radius:12px;background:var(--bg);outline:none;}
+    .modal input:focus{border-color:var(--accent);}
+    .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;}
+    .modal-error{color:var(--danger);font-size:.88rem;margin:12px 0 0;}
+    #join-code{text-align:center;letter-spacing:.4em;font-size:1.6rem;font-weight:600;}
+    .code-big{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:2.5rem;letter-spacing:.12em;text-align:center;color:var(--accent-deep);margin:4px 0 16px;}
+    .qr-box{display:grid;place-items:center;padding:14px;background:#fff;border:1px solid var(--line);border-radius:14px;margin-bottom:4px;}
+    .qr-box img,.qr-box canvas{display:block;}
+
+    /* Einrichtungs-Hinweis */
+    .overlay{position:fixed;inset:0;background:rgba(42,38,34,.5);display:grid;place-items:center;padding:24px;z-index:60;}
+    .card{background:var(--surface);border-radius:18px;padding:26px 24px;max-width:400px;box-shadow:0 20px 50px rgba(42,38,34,.25);}
     .card h2{font-family:"Bricolage Grotesque",sans-serif;margin:0 0 10px;font-size:1.25rem;}
     .card p{margin:0 0 10px;color:var(--ink-soft);font-size:.95rem;line-height:1.5;}
     .card code{background:var(--accent-tint);padding:2px 6px;border-radius:6px;font-size:.85em;}
 
-    .banner{
-      margin:10px 12px;padding:11px 14px;border-radius:11px;
-      background:#FBEDE9;border:1px solid #F0CFC6;color:#9A3B2A;
-      font-size:.88rem;line-height:1.4;
-    }
     [hidden]{display:none !important;}
-
     :focus-visible{outline:2px solid var(--accent-deep);outline-offset:2px;}
     @media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important;}}
   </style>
@@ -186,23 +160,21 @@
 <body>
   <div class="app">
     <header>
-      <h1>Einkaufsliste</h1>
+      <button class="group-switch" id="group-switch" aria-label="Gruppe wechseln">
+        <span class="group-name" id="current-group-name">…</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
       <span class="status"><span class="dot" id="status-dot"></span><span id="status-text">Verbinde …</span></span>
     </header>
 
     <main id="main">
       <div class="banner" id="banner" hidden></div>
-
       <p class="list-label" id="todo-label" hidden></p>
       <ul class="list" id="todo-list"></ul>
-
       <div class="divider" id="done-divider" hidden><span id="done-label"></span></div>
       <ul class="list" id="done-list"></ul>
-
-      <div class="empty" id="empty" hidden>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 6h18l-1.6 9.5a2 2 0 0 1-2 1.7H6.6a2 2 0 0 1-2-1.7L3 6Z"/><path d="M8 6 9.5 2.5M16 6 14.5 2.5"/><path d="M9 11v3M15 11v3"/>
-        </svg>
+      <div class="empty" id="empty-list" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18l-1.6 9.5a2 2 0 0 1-2 1.7H6.6a2 2 0 0 1-2-1.7L3 6Z"/><path d="M8 6 9.5 2.5M16 6 14.5 2.5"/><path d="M9 11v3M15 11v3"/></svg>
         <p class="empty-title">Noch nichts auf der Liste</p>
         <p class="empty-sub">Tippe unten dein erstes Produkt ein.</p>
       </div>
@@ -214,12 +186,73 @@
     </div>
   </div>
 
-  <!-- Einrichtungs-Hinweis, falls die Firebase-Werte noch fehlen -->
+  <!-- Willkommensbildschirm: noch keine Gruppe -->
+  <div class="welcome" id="welcome" hidden>
+    <div class="welcome-inner">
+      <svg class="logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18l-1.6 9.5a2 2 0 0 1-2 1.7H6.6a2 2 0 0 1-2-1.7L3 6Z"/><path d="M8 6 9.5 2.5M16 6 14.5 2.5"/></svg>
+      <h1>Einkaufsliste</h1>
+      <p>Erstelle eine Einkaufsgruppe oder tritt einer bestehenden bei. Alle in einer Gruppe teilen sich dieselbe Liste.</p>
+      <button class="btn-primary" id="welcome-create">Gruppe erstellen</button>
+      <button class="btn-ghost" id="welcome-join">Gruppe beitreten</button>
+    </div>
+  </div>
+
+  <div class="backdrop" id="backdrop" hidden></div>
+
+  <!-- Gruppenmenü -->
+  <div class="sheet" id="group-sheet" hidden>
+    <div class="sheet-handle"></div>
+    <h2 class="sheet-title">Gruppen</h2>
+    <div id="group-list"></div>
+    <hr>
+    <button class="row-action" id="sheet-create"><span class="ico">＋</span> Neue Gruppe erstellen</button>
+    <button class="row-action" id="sheet-join"><span class="ico">↳</span> Gruppe beitreten</button>
+    <hr>
+    <button class="row-action" id="sheet-share"><span class="ico">⤴</span> Diese Gruppe teilen (Code &amp; QR)</button>
+    <button class="row-action danger" id="sheet-leave"><span class="ico">✕</span> Diese Gruppe verlassen</button>
+  </div>
+
+  <!-- Gruppe erstellen -->
+  <div class="modal" id="create-modal" hidden>
+    <h2>Neue Gruppe</h2>
+    <p>Gib der Gruppe einen Namen.</p>
+    <input id="create-name" type="text" placeholder="z. B. Haushalt, WG, Familie" autocomplete="off" enterkeyhint="done">
+    <div class="modal-actions">
+      <button class="btn-ghost" data-close>Abbrechen</button>
+      <button class="btn-primary" id="create-confirm">Erstellen</button>
+    </div>
+  </div>
+
+  <!-- Gruppe beitreten -->
+  <div class="modal" id="join-modal" hidden>
+    <h2>Gruppe beitreten</h2>
+    <p>Gib den 6-stelligen Code ein – oder scanne den QR-Code einer Gruppe einfach mit der Kamera deines Handys.</p>
+    <input id="join-code" type="text" inputmode="numeric" maxlength="6" placeholder="123456" autocomplete="off" enterkeyhint="go">
+    <p class="modal-error" id="join-error" hidden></p>
+    <div class="modal-actions">
+      <button class="btn-ghost" data-close>Abbrechen</button>
+      <button class="btn-primary" id="join-confirm">Beitreten</button>
+    </div>
+  </div>
+
+  <!-- Gruppe teilen -->
+  <div class="modal" id="share-modal" hidden>
+    <h2>Gruppe teilen</h2>
+    <p>Andere treten bei, indem sie diesen Code eingeben oder den QR-Code mit der Kamera scannen.</p>
+    <div class="code-big" id="share-code">––––––</div>
+    <div class="qr-box" id="qr-box"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="copy-code">Code kopieren</button>
+      <button class="btn-primary" data-close>Fertig</button>
+    </div>
+  </div>
+
+  <!-- Einrichtungs-Hinweis (wenn firebase-config.js fehlt) -->
   <div class="overlay" id="setup-overlay" hidden>
     <div class="card">
       <h2>Fast fertig</h2>
-      <p>Diese App braucht noch deine Firebase-Zugangsdaten.</p>
-      <p>Öffne diese Datei, ersetze den Block <code>firebaseConfig</code> durch deine eigenen Werte aus der Firebase-Konsole und lade die Seite neu.</p>
+      <p>Diese App braucht deine Firebase-Zugangsdaten in einer Datei namens <code>firebase-config.js</code> – im selben Ordner wie diese Seite.</p>
+      <p>Lege die Datei an, trag deine Werte ein und lade sie neben die <code>index.html</code>. Dann diese Seite neu laden.</p>
     </div>
   </div>
 
@@ -228,154 +261,271 @@
     import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js';
     import {
       initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
-      collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, serverTimestamp
+      collection, doc, addDoc, setDoc, getDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp
     } from 'https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js';
 
-    /* =========================================================
-       HIER DEINE FIREBASE-KONFIGURATION EINFÜGEN
-       (Firebase-Konsole → Projekteinstellungen → Meine Apps → Web-App)
-       Ersetze die sechs "HIER_EINFÜGEN" durch deine echten Werte.
-       Diese Werte dürfen öffentlich sein – das ist so vorgesehen.
-       ========================================================= */
-    const firebaseConfig = {
-      apiKey: "AIzaSyAeZKQcXshcliezBHBCt7wRBwROzBrByXQ",
-      authDomain: "shopomatus.firebaseapp.com",
-      projectId: "shopomatus",
-      storageBucket: "shopomatus.firebasestorage.app",
-      messagingSenderId: "292760834395",
-      appId: "1:292760834395:web:995ef2d5bbe0b655dcca7e"
-    };
+    boot();
 
-    // --- DOM-Elemente einsammeln ---
-    const todoList    = document.getElementById('todo-list');
-    const doneList    = document.getElementById('done-list');
-    const todoLabel   = document.getElementById('todo-label');
-    const doneDivider = document.getElementById('done-divider');
-    const doneLabel   = document.getElementById('done-label');
-    const emptyBox    = document.getElementById('empty');
-    const input       = document.getElementById('new-item');
-    const addBtn      = document.getElementById('add-btn');
-    const statusDot   = document.getElementById('status-dot');
-    const statusText  = document.getElementById('status-text');
-    const banner      = document.getElementById('banner');
-    const mainEl      = document.getElementById('main');
-
-    // Deutsch-bewusster Vergleich (Umlaute, Groß/Klein egal)
-    const collator = new Intl.Collator('de', { sensitivity: 'base' });
-
-    // Noch keine Konfiguration? Dann nur den Hinweis zeigen.
-    if (firebaseConfig.apiKey.includes('EINFÜGEN')) {
-      document.getElementById('setup-overlay').hidden = false;
-    } else {
-      startApp();
+    async function boot(){
+      // Konfiguration aus eigener Datei laden
+      let cfg = null;
+      try { cfg = (await import('./firebase-config.js')).firebaseConfig; } catch(e){ cfg = null; }
+      if (!cfg || String(cfg.apiKey || '').includes('EINFÜGEN')) {
+        document.getElementById('setup-overlay').hidden = false;
+        return;
+      }
+      init(cfg);
     }
 
-    function startApp(){
-      const app = initializeApp(firebaseConfig);
-      // Firestore mit Offline-Cache: die Liste funktioniert auch ohne Netz weiter.
-      const db = initializeFirestore(app, {
-        localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
-      });
+    function init(cfg){
+      const app  = initializeApp(cfg);
+      const db   = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
       const auth = getAuth(app);
-      const itemsCol = collection(db, 'items');
 
-      // Jedes Gerät bekommt anonym eine Identität – kein Login nötig.
+      // ---- DOM ----
+      const $ = (id) => document.getElementById(id);
+      const todoList=$('todo-list'), doneList=$('done-list'), todoLabel=$('todo-label'),
+            doneDivider=$('done-divider'), doneLabel=$('done-label'), emptyList=$('empty-list'),
+            input=$('new-item'), addBtn=$('add-btn'), statusDot=$('status-dot'), statusText=$('status-text'),
+            banner=$('banner'), mainEl=$('main'),
+            welcome=$('welcome'), currentGroupName=$('current-group-name'),
+            backdrop=$('backdrop'), groupSheet=$('group-sheet'), groupListEl=$('group-list'),
+            createModal=$('create-modal'), joinModal=$('join-modal'), shareModal=$('share-modal'),
+            createName=$('create-name'), createConfirm=$('create-confirm'),
+            joinCodeInput=$('join-code'), joinConfirm=$('join-confirm'), joinError=$('join-error'),
+            shareCode=$('share-code'), qrBox=$('qr-box'), copyCode=$('copy-code');
+
+      const collator = new Intl.Collator('de', { sensitivity:'base' });
+      const LS_GROUPS='shopomat_groups', LS_CURRENT='shopomat_current';
+
+      // ---- Zustand (im Gerät gespeichert) ----
+      let groups = loadGroups();           // [{id,name,code}]
+      let currentId = localStorage.getItem(LS_CURRENT) || null;
+      let itemsUnsub = null;
+
+      // ---- Anmeldung & Start ----
       signInAnonymously(auth).catch(() => {
         setStatus('error');
-        showBanner('Anmeldung fehlgeschlagen. Prüfe in Firebase, ob die anonyme Anmeldung aktiviert ist, und ob die Konfiguration stimmt.');
+        showBanner('Anmeldung fehlgeschlagen. Prüfe in Firebase, ob die anonyme Anmeldung aktiviert ist.');
       });
 
-      onAuthStateChanged(auth, (user) => {
+      onAuthStateChanged(auth, async (user) => {
         if (!user) return;
         setStatus('connected');
-        // Live zuhören: jede Änderung (auch von anderen Geräten) landet sofort hier.
-        onSnapshot(itemsCol, (snap) => {
-          const items = [];
-          snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
-          render(items);
-        }, () => setStatus('error'));
+
+        // Per QR/Link beigetreten? (?join=CODE)
+        const joinCode = new URLSearchParams(location.search).get('join');
+        if (joinCode) {
+          try {
+            const g = await joinByCode(joinCode);
+            addOrUpdateGroup(g);
+            history.replaceState({}, '', location.pathname);
+            setCurrentGroup(g.id);
+            showBanner(`Beigetreten: „${g.name}"`);
+            return;
+          } catch(e) {
+            history.replaceState({}, '', location.pathname);
+            showBanner('Diese Gruppe wurde nicht gefunden – bitte Code prüfen.');
+          }
+        }
+
+        if (currentId && groups.some(g => g.id === currentId)) setCurrentGroup(currentId);
+        else if (groups.length) setCurrentGroup(groups[0].id);
+        else renderApp(); // Willkommen
       });
 
-      // Verbindungsstatus bei Netzwechsel aktualisieren
       window.addEventListener('offline', () => setStatus('offline'));
       window.addEventListener('online',  () => setStatus('connected'));
 
-      // --- Aktionen ---
+      // ============ Gruppen-Logik ============
+      function loadGroups(){ try { return JSON.parse(localStorage.getItem(LS_GROUPS) || '[]'); } catch(e){ return []; } }
+      function persistGroups(){ localStorage.setItem(LS_GROUPS, JSON.stringify(groups)); }
+      function persistCurrent(){ currentId ? localStorage.setItem(LS_CURRENT, currentId) : localStorage.removeItem(LS_CURRENT); }
+      function addOrUpdateGroup(g){ const i=groups.findIndex(x=>x.id===g.id); if(i>=0) groups[i]=g; else groups.push(g); persistGroups(); }
+      function removeGroup(id){ groups=groups.filter(g=>g.id!==id); persistGroups(); }
+
+      // erzeugt eine neue Gruppe mit eindeutigem 6-stelligen Code
+      async function createGroup(name){
+        let code='', taken=true, tries=0;
+        while (taken && tries < 25){
+          code = String(Math.floor(100000 + Math.random()*900000)); // 100000–999999
+          const s = await getDoc(doc(db,'codes',code));
+          taken = s.exists(); tries++;
+        }
+        const gRef = await addDoc(collection(db,'groups'), { name, code, createdAt: serverTimestamp() });
+        await setDoc(doc(db,'codes',code), { groupId: gRef.id });
+        return { id: gRef.id, name, code };
+      }
+
+      // schlägt eine Gruppe per Code nach
+      async function joinByCode(code){
+        code = String(code).trim();
+        const cs = await getDoc(doc(db,'codes',code));
+        if (!cs.exists()) throw new Error('not found');
+        const groupId = cs.data().groupId;
+        const gs = await getDoc(doc(db,'groups',groupId));
+        return {
+          id: groupId,
+          name: gs.exists() ? (gs.data().name || 'Gruppe') : 'Gruppe',
+          code: gs.exists() ? (gs.data().code || code) : code
+        };
+      }
+
+      function setCurrentGroup(id){
+        if (itemsUnsub){ itemsUnsub(); itemsUnsub=null; }
+        currentId = id || null;
+        persistCurrent();
+        if (currentId) subscribeItems();
+        renderApp();
+        closeAll();
+      }
+
+      // ============ Artikel-Logik (pro Gruppe) ============
+      function itemsCol(){ return collection(db,'groups',currentId,'items'); }
+
+      function subscribeItems(){
+        itemsUnsub = onSnapshot(itemsCol(), (snap) => {
+          const items=[]; snap.forEach(d => items.push({ id:d.id, ...d.data() }));
+          render(items);
+        }, () => setStatus('error'));
+      }
+
       async function addItem(){
         const name = input.value.trim();
-        if (!name) return;
-        input.value = '';
-        input.focus(); // gleich das nächste tippen können
-        try {
-          await addDoc(itemsCol, { name, checked: false, createdAt: serverTimestamp() });
-        } catch(e){ showBanner('Konnte nicht speichern – Verbindung prüfen.'); }
+        if (!name || !currentId) return;
+        input.value=''; input.focus();
+        try { await addDoc(itemsCol(), { name, checked:false, createdAt: serverTimestamp() }); }
+        catch(e){ showBanner('Konnte nicht speichern – Verbindung prüfen.'); }
       }
-      async function toggleItem(id, isDone){
-        try { await updateDoc(doc(db, 'items', id), { checked: !isDone }); } catch(e){}
-      }
-      async function removeItem(id){
-        try { await deleteDoc(doc(db, 'items', id)); } catch(e){}
+      async function toggleItem(id, isDone){ try { await updateDoc(doc(db,'groups',currentId,'items',id), { checked: !isDone }); } catch(e){} }
+      async function removeItem(id){ try { await deleteDoc(doc(db,'groups',currentId,'items',id)); } catch(e){} }
+
+      // ============ Anzeige ============
+      function renderApp(){
+        const hasGroup = currentId && groups.some(g => g.id === currentId);
+        welcome.hidden = hasGroup;
+        if (hasGroup){
+          const g = groups.find(x => x.id === currentId);
+          currentGroupName.textContent = g ? g.name : 'Gruppe';
+        }
       }
 
+      function render(items){
+        const toBuy = items.filter(i => !i.checked).sort((a,b)=>collator.compare(a.name,b.name));
+        const done  = items.filter(i =>  i.checked).sort((a,b)=>collator.compare(a.name,b.name));
+        todoList.innerHTML = toBuy.map(rowHTML).join('');
+        doneList.innerHTML = done.map(rowHTML).join('');
+        todoLabel.hidden = toBuy.length === 0;
+        todoLabel.textContent = `Zu kaufen · ${toBuy.length}`;
+        doneDivider.hidden = done.length === 0;
+        doneLabel.textContent = `Erledigt · ${done.length}`;
+        emptyList.hidden = items.length !== 0;
+      }
+
+      function rowHTML(item){
+        const d = item.checked ? ' done' : '';
+        const label = item.checked ? 'Wieder zu kaufen' : 'Als erledigt markieren';
+        return `<li class="item${d}" data-id="${item.id}">
+          <button class="check" aria-label="${label}"></button>
+          <span class="name">${esc(item.name)}</span>
+          <button class="del" aria-label="Löschen">×</button>
+        </li>`;
+      }
+
+      function renderGroupList(){
+        groupListEl.innerHTML = groups.map(g => {
+          const active = g.id === currentId;
+          const check = active ? '<svg class="gi-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg>' : '';
+          return `<div class="group-item${active?' active':''}" data-id="${g.id}">
+            <div><div class="gi-name">${esc(g.name)}</div><div class="gi-code">Code ${esc(g.code)}</div></div>${check}
+          </div>`;
+        }).join('') || '<p style="color:var(--ink-soft);padding:8px 6px;margin:0;">Noch keine Gruppe.</p>';
+      }
+
+      // ============ Menüs / Dialoge ============
+      function openEl(el){ backdrop.hidden=false; el.hidden=false; }
+      function closeAll(){ backdrop.hidden=true; [groupSheet,createModal,joinModal,shareModal].forEach(e => e.hidden=true); }
+
+      function openShare(){
+        const g = groups.find(x => x.id === currentId); if (!g) return;
+        shareCode.textContent = g.code;
+        qrBox.innerHTML = '';
+        const url = `${location.origin}${location.pathname}?join=${g.code}`;
+        if (typeof QRCode !== 'undefined'){
+          new QRCode(qrBox, { text:url, width:200, height:200, colorDark:'#2A2622', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.M });
+        } else {
+          qrBox.innerHTML = '<p style="color:var(--ink-soft);font-size:.85rem;text-align:center;margin:0;">QR-Code konnte nicht geladen werden – nutze den Code oben.</p>';
+        }
+        openEl(shareModal);
+      }
+
+      // ---- Verdrahtung der Knöpfe ----
       addBtn.addEventListener('click', addItem);
-      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') addItem(); });
+      input.addEventListener('keydown', e => { if (e.key === 'Enter') addItem(); });
 
-      // Ein Klick-Handler für die ganze Liste (funktioniert auch nach Neu-Aufbau)
       mainEl.addEventListener('click', (e) => {
-        const li = e.target.closest('.item');
-        if (!li) return;
+        const li = e.target.closest('.item'); if (!li) return;
         const id = li.dataset.id;
-        if (e.target.closest('.del')) { removeItem(id); return; }
+        if (e.target.closest('.del')){ removeItem(id); return; }
         const isDone = li.classList.contains('done');
-        li.classList.toggle('done');   // sofortiges Feedback, der Server zieht nach
+        li.classList.toggle('done');
         toggleItem(id, isDone);
       });
+
+      $('group-switch').addEventListener('click', () => { renderGroupList(); openEl(groupSheet); });
+      $('welcome-create').addEventListener('click', () => { closeAll(); createName.value=''; openEl(createModal); createName.focus(); });
+      $('welcome-join').addEventListener('click',   () => { closeAll(); joinCodeInput.value=''; joinError.hidden=true; openEl(joinModal); joinCodeInput.focus(); });
+      $('sheet-create').addEventListener('click',   () => { closeAll(); createName.value=''; openEl(createModal); createName.focus(); });
+      $('sheet-join').addEventListener('click',     () => { closeAll(); joinCodeInput.value=''; joinError.hidden=true; openEl(joinModal); joinCodeInput.focus(); });
+      $('sheet-share').addEventListener('click',    () => { closeAll(); openShare(); });
+      $('sheet-leave').addEventListener('click',    () => { if (!currentId) return; removeGroup(currentId); setCurrentGroup(groups[0]?.id || null); });
+
+      backdrop.addEventListener('click', closeAll);
+      document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeAll));
+
+      createConfirm.addEventListener('click', async () => {
+        const name = createName.value.trim() || 'Meine Gruppe';
+        createConfirm.disabled = true;
+        try { const g = await createGroup(name); addOrUpdateGroup(g); setCurrentGroup(g.id); openShare(); }
+        catch(e){ showBanner('Gruppe konnte nicht erstellt werden.'); closeAll(); }
+        createConfirm.disabled = false;
+      });
+      createName.addEventListener('keydown', e => { if (e.key === 'Enter') createConfirm.click(); });
+
+      joinCodeInput.addEventListener('input', () => { joinCodeInput.value = joinCodeInput.value.replace(/\D/g,'').slice(0,6); });
+      joinConfirm.addEventListener('click', async () => {
+        const code = joinCodeInput.value.trim();
+        joinError.hidden = true;
+        if (code.length !== 6){ joinError.textContent = 'Bitte 6 Ziffern eingeben.'; joinError.hidden = false; return; }
+        joinConfirm.disabled = true;
+        try { const g = await joinByCode(code); addOrUpdateGroup(g); setCurrentGroup(g.id); }
+        catch(e){ joinError.textContent = 'Diese Gruppe wurde nicht gefunden.'; joinError.hidden = false; }
+        joinConfirm.disabled = false;
+      });
+      joinCodeInput.addEventListener('keydown', e => { if (e.key === 'Enter') joinConfirm.click(); });
+
+      copyCode.addEventListener('click', async () => {
+        const g = groups.find(x => x.id === currentId); if (!g) return;
+        try { await navigator.clipboard.writeText(g.code); copyCode.textContent = 'Kopiert ✓'; setTimeout(() => copyCode.textContent = 'Code kopieren', 1500); } catch(e){}
+      });
+
+      groupListEl.addEventListener('click', (e) => {
+        const gi = e.target.closest('.group-item'); if (!gi) return;
+        setCurrentGroup(gi.dataset.id);
+      });
+
+      // ---- Hilfsfunktionen ----
+      function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+      function showBanner(msg){ banner.textContent = msg; banner.hidden = false; }
+      function setStatus(state){
+        const map = {
+          connecting:['var(--accent)','Verbinde …'], connected:['var(--ok)','Verbunden'],
+          offline:['var(--muted)','Offline – wird synchronisiert'], error:['var(--danger)','Keine Verbindung']
+        };
+        const [c,t] = map[state] || map.connecting;
+        statusDot.style.background = c; statusText.textContent = t;
+      }
     }
-
-    // --- Anzeige aufbauen ---
-    function render(items){
-      const toBuy = items.filter(i => !i.checked).sort((a,b) => collator.compare(a.name, b.name));
-      const done  = items.filter(i =>  i.checked).sort((a,b) => collator.compare(a.name, b.name));
-
-      todoList.innerHTML = toBuy.map(rowHTML).join('');
-      doneList.innerHTML = done.map(rowHTML).join('');
-
-      todoLabel.hidden = toBuy.length === 0;
-      todoLabel.textContent = `Zu kaufen · ${toBuy.length}`;
-
-      doneDivider.hidden = done.length === 0;
-      doneLabel.textContent = `Erledigt · ${done.length}`;
-
-      emptyBox.hidden = items.length !== 0;
-    }
-
-    function rowHTML(item){
-      const doneClass = item.checked ? ' done' : '';
-      const label = item.checked ? 'Wieder zu kaufen' : 'Als erledigt markieren';
-      return `<li class="item${doneClass}" data-id="${item.id}">
-        <button class="check" aria-label="${label}"></button>
-        <span class="name">${esc(item.name)}</span>
-        <button class="del" aria-label="Löschen">×</button>
-      </li>`;
-    }
-
-    function esc(s){
-      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    }
-
-    function setStatus(state){
-      const map = {
-        connecting: ['var(--accent)', 'Verbinde …'],
-        connected:  ['var(--ok)',     'Verbunden'],
-        offline:    ['var(--muted)',  'Offline – wird später synchronisiert'],
-        error:      ['var(--danger)', 'Keine Verbindung']
-      };
-      const [color, text] = map[state] || map.connecting;
-      statusDot.style.background = color;
-      statusText.textContent = text;
-    }
-
-    function showBanner(msg){ banner.textContent = msg; banner.hidden = false; }
   </script>
 </body>
 </html>
