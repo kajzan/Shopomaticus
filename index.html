@@ -6,12 +6,14 @@
   <meta name="theme-color" content="#FBFAF7">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Einkaufsliste">
-  <title>Einkaufsliste</title>
+  <meta name="apple-mobile-web-app-title" content="Shopomaticus">
+  <title>Shopomaticus</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icon-512.png">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
   <style>
@@ -222,7 +224,20 @@
   <div class="sheet" id="group-sheet" hidden>
     <div class="sheet-handle"></div>
     <h2 class="sheet-title">Gruppen</h2>
+    <div style="padding:4px 0 10px;">
+      <p style="font-size:.75rem;font-weight:600;color:var(--ink-soft);margin:0 0 7px;letter-spacing:.05em;text-transform:uppercase;">Mein Name</p>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input id="my-name-input" type="text" placeholder="z. B. Kaj" maxlength="30" autocomplete="off"
+               style="flex:1;font-size:15px;font-family:inherit;padding:10px 13px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);outline:none;transition:border-color .15s;">
+        <button id="my-name-save" class="btn-primary" style="padding:10px 16px;font-size:.9rem;border-radius:10px;">OK</button>
+      </div>
+    </div>
+    <hr>
     <div id="group-list"></div>
+    <div id="members-section" hidden style="margin-top:4px;">
+      <p style="font-size:.75rem;font-weight:600;color:var(--ink-soft);margin:8px 0 4px 4px;letter-spacing:.05em;text-transform:uppercase;">Mitglieder</p>
+      <div id="members-list"></div>
+    </div>
     <hr>
     <button class="row-action" id="sheet-create"><span class="ico">＋</span> Neue Gruppe erstellen</button>
     <button class="row-action" id="sheet-join"><span class="ico">↳</span> Gruppe beitreten</button>
@@ -265,6 +280,7 @@
     <p>Andere treten bei, indem sie diesen Code eingeben oder den QR-Code mit der Kamera scannen.</p>
     <div class="code-big" id="share-code">––––––</div>
     <div class="qr-box" id="qr-box"></div>
+    <button id="share-link-btn" class="btn-ghost" style="width:100%;margin:10px 0 0;">🔗 Link teilen</button>
     <div class="modal-actions">
       <button class="btn-ghost" id="copy-code">Code kopieren</button>
       <button class="btn-primary" data-close>Fertig</button>
@@ -415,6 +431,8 @@
       let currentItems = [];                 // zuletzt geladene Artikel der aktuellen Kategorie
       let pending = new Map();               // itemId -> { evtRef, timeout }  (offene 10s-Fenster)
       let editingCatId = null, selectedIcon = '🛒';
+      let myName = localStorage.getItem('shopomat_name') || '';
+      let members = [], membersUnsub = null, currentUid = null;
 
       // ============ Shopdict — Übergruppen-Wörterbuch ============
       // (identische Logik wie shopdict.mjs, ohne export-Keywords)
@@ -577,6 +595,39 @@
             { entries: { [normKey]: groupId } }, { merge:true });
           globalDict[normKey] = groupId;
         } catch(e){}
+      }
+
+      // ============ Mitglieder ============
+      function subscribeMembers(gid){
+        if (membersUnsub){ membersUnsub(); membersUnsub=null; }
+        members = [];
+        if (!gid) return;
+        membersUnsub = onSnapshot(collection(db,'groups',gid,'members'), (snap) => {
+          members = [];
+          snap.forEach(d => members.push({ uid:d.id, ...d.data() }));
+          members.sort((a,b) => collator.compare(a.name||'', b.name||''));
+          if (!$('group-sheet').hidden) renderMembersList();
+        }, ()=>{});
+      }
+      async function writeMember(gid){
+        if (!gid || !currentUid || !myName.trim()) return;
+        try {
+          await setDoc(doc(db,'groups',gid,'members',currentUid),
+            { name: myName.trim(), updatedAt: serverTimestamp() }, { merge:true });
+        } catch(e){}
+      }
+      function renderMembersList(){
+        const sec = $('members-section'), lst = $('members-list');
+        if (!sec || !lst) return;
+        if (members.length === 0){ sec.hidden=true; return; }
+        sec.hidden = false;
+        lst.innerHTML = members.map(m => {
+          const isMe = m.uid === currentUid;
+          return `<div style="display:flex;align-items:center;gap:10px;padding:8px 6px;border-radius:8px;">
+            <span style="font-size:1.1rem;">${isMe?'👤':'🧑'}</span>
+            <span style="font-size:.95rem;font-weight:${isMe?'600':'400'};color:var(--ink);">${esc(m.name||'Unbekannt')}${isMe?' <span style="color:var(--ink-soft);font-weight:400;">(du)</span>':''}</span>
+          </div>`;
+        }).join('');
       }
 
       // ============ Stats ============
@@ -761,6 +812,7 @@
 
       onAuthStateChanged(auth, async (user) => {
         if (!user) return;
+        currentUid = user.uid;
         setStatus('connected');
         const joinCode = new URLSearchParams(location.search).get('join');
         if (joinCode) {
@@ -806,6 +858,8 @@
         currentId = id || null; currentCategoryId = null; categories = []; currentItems = [];
         persistCurrent(); renderApp(); closeAll(); renderTabs();
         subscribeGroupDict(currentId);
+        subscribeMembers(currentId);
+        if (myName && currentId) writeMember(currentId).catch(()=>{});
         if (!globalDict || Object.keys(globalDict).length===0) loadGlobalDict();
         if (currentId) subscribeCategories(currentId); else render([]);
       }
@@ -1066,7 +1120,7 @@
       $('manage-add').addEventListener('click', () => openCategoryModal(null));
       manageList.addEventListener('click', (e) => { const row = e.target.closest('.manage-row'); if (row) openCategoryModal(row.dataset.id); });
 
-      $('group-switch').addEventListener('click', () => { renderGroupList(); openEl(groupSheet); });
+      $('group-switch').addEventListener('click', () => { renderGroupList(); renderMembersList(); $('my-name-input').value = myName; openEl(groupSheet); });
       $('welcome-create').addEventListener('click', () => { closeAll(); createName.value=''; openEl(createModal); createName.focus(); });
       $('welcome-join').addEventListener('click',   () => { closeAll(); joinCodeInput.value=''; joinError.hidden=true; openEl(joinModal); joinCodeInput.focus(); });
       $('sheet-create').addEventListener('click',   () => { closeAll(); createName.value=''; openEl(createModal); createName.focus(); });
@@ -1099,6 +1153,30 @@
       copyCode.addEventListener('click', async () => {
         const g = groups.find(x => x.id === currentId); if (!g) return;
         try { await navigator.clipboard.writeText(g.code); copyCode.textContent = 'Kopiert ✓'; setTimeout(() => copyCode.textContent = 'Code kopieren', 1500); } catch(e){}
+      });
+
+      $('my-name-save').addEventListener('click', () => {
+        const name = $('my-name-input').value.trim(); if (!name) return;
+        myName = name; localStorage.setItem('shopomat_name', myName);
+        if (currentId) writeMember(currentId).catch(()=>{});
+        renderMembersList();
+        $('my-name-save').textContent = '✓'; setTimeout(() => $('my-name-save').textContent = 'OK', 1500);
+      });
+      $('my-name-input').addEventListener('keydown', e => { if (e.key==='Enter') $('my-name-save').click(); });
+      $('my-name-input').addEventListener('focus', e => { e.target.style.borderColor='var(--accent)'; });
+      $('my-name-input').addEventListener('blur',  e => { e.target.style.borderColor=''; });
+
+      $('share-link-btn').addEventListener('click', async () => {
+        const g = groups.find(x => x.id === currentId); if (!g) return;
+        const url = `${location.origin}${location.pathname}?join=${g.code}`;
+        if (navigator.share){
+          try { await navigator.share({ title:'Shopomaticus', text:`Tritt unserer Einkaufsliste bei! Code: ${g.code}`, url }); return; } catch(e){}
+        }
+        try {
+          await navigator.clipboard.writeText(url);
+          const btn = $('share-link-btn'); btn.textContent = 'Link kopiert ✓';
+          setTimeout(() => btn.textContent = '🔗 Link teilen', 2000);
+        } catch(e){}
       });
       groupListEl.addEventListener('click', (e) => { const gi = e.target.closest('.group-item'); if (gi) setCurrentGroup(gi.dataset.id); });
 
