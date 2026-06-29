@@ -146,6 +146,24 @@
     [hidden]{display:none !important;}
     :focus-visible{outline:2px solid var(--accent-deep);outline-offset:2px;}
     @media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important;}}
+
+    /* ---- Stats / Phase 5 ---- */
+    .period-chip{flex:0 0 auto;font-size:.82rem;padding:5px 11px;}
+    .legend-row{display:flex;align-items:center;gap:9px;padding:5px 4px;border-radius:8px;cursor:pointer;}
+    .legend-row:hover{background:#F3EFE8;}
+    .legend-dot{width:12px;height:12px;border-radius:50%;flex:0 0 auto;}
+    .legend-label{flex:1;font-size:.9rem;}
+    .legend-count{font-size:.82rem;color:var(--ink-soft);font-weight:500;}
+    .unassigned-item{display:flex;align-items:center;justify-content:space-between;gap:8px;
+                     padding:8px 6px;border-radius:9px;cursor:pointer;}
+    .unassigned-item:hover{background:#F3EFE8;}
+    .unassigned-name{font-size:.92rem;flex:1;}
+    .unassigned-count{font-size:.78rem;color:var(--ink-soft);}
+    .sg-card{display:flex;flex-direction:column;align-items:center;gap:5px;border:1.5px solid var(--line);
+             border-radius:12px;padding:10px 6px;cursor:pointer;background:var(--surface);transition:border-color .15s,background .15s;}
+    .sg-card:hover{border-color:var(--accent);background:var(--accent-tint);}
+    .sg-card-ico{font-size:1.5rem;line-height:1;}
+    .sg-card-label{font-size:.76rem;font-weight:500;text-align:center;color:var(--ink);line-height:1.25;}
   </style>
 </head>
 <body>
@@ -160,6 +178,7 @@
 
     <nav class="tabs">
       <div class="tabs-scroll" id="tabs-scroll"></div>
+      <button class="tabs-gear" id="stats-btn" aria-label="Statistik" title="Statistik">📊</button>
       <button class="tabs-gear" id="manage-cats" aria-label="Kategorien verwalten">⚙</button>
     </nav>
 
@@ -280,6 +299,62 @@
     </div>
   </div>
 
+  <!-- ======= Stats-Sheet ======= -->
+  <div class="sheet" id="stats-sheet" hidden>
+    <div class="sheet-handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+      <h2 class="sheet-title" style="margin:0;">Kaufhäufigkeit</h2>
+      <button class="tabs-gear" id="stats-close" aria-label="Schließen" style="font-size:1rem;color:var(--ink-soft);">✕</button>
+    </div>
+
+    <!-- Zeitraum-Chips -->
+    <div id="period-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;"></div>
+
+    <!-- Scope-Toggle -->
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button class="chip" id="scope-cat" style="font-size:.82rem;padding:5px 11px;">Diese Kategorie</button>
+      <button class="chip" id="scope-all" style="font-size:.82rem;padding:5px 11px;">Alle Kategorien</button>
+    </div>
+
+    <!-- Donut -->
+    <div id="donut-wrap" style="display:flex;justify-content:center;margin-bottom:14px;">
+      <svg id="donut-svg" viewBox="0 0 200 200" width="180" height="180" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="100" cy="100" r="75" fill="none" stroke="var(--line)" stroke-width="32"/>
+        <text id="donut-center" x="100" y="100" text-anchor="middle" dominant-baseline="middle"
+              style="font-family:'Bricolage Grotesque',sans-serif;font-size:22px;font-weight:700;fill:var(--ink);"></text>
+      </svg>
+    </div>
+
+    <!-- Legende -->
+    <div id="stats-legend" style="display:flex;flex-direction:column;gap:4px;margin-bottom:16px;"></div>
+
+    <!-- Nicht zugeordnet -->
+    <div id="unassigned-section" hidden>
+      <div class="divider"><span>Nicht zugeordnet</span></div>
+      <p style="font-size:.85rem;color:var(--ink-soft);margin:6px 0 8px;">Diese Produkte konnten keiner Übergruppe zugeordnet werden. Tippe auf einen Eintrag, um ihn zuzuordnen.</p>
+      <div id="unassigned-list"></div>
+    </div>
+  </div>
+
+  <!-- ======= Übergruppen-Picker ======= -->
+  <div class="modal" id="sg-picker" hidden>
+    <h2 id="sg-picker-title">Übergruppe wählen</h2>
+    <p id="sg-picker-sub" style="font-size:.85rem;color:var(--ink-soft);margin:0 0 12px;"></p>
+    <div id="sg-picker-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:7px;max-height:50vh;overflow-y:auto;"></div>
+    <div class="modal-actions" style="margin-top:14px;">
+      <button class="btn-ghost" id="sg-picker-cancel">Abbrechen</button>
+    </div>
+  </div>
+
+  <!-- ======= Post-Add-Toast ======= -->
+  <div id="sg-toast" hidden style="position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom)+76px);transform:translateX(-50%);
+       background:var(--ink);color:#fff;border-radius:12px;padding:10px 16px;font-size:.88rem;z-index:70;
+       display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(42,38,34,.3);white-space:nowrap;max-width:calc(100vw - 32px);">
+    <span id="sg-toast-text"></span>
+    <button id="sg-toast-btn" style="background:var(--accent);color:#fff;border:none;border-radius:8px;
+            padding:5px 10px;font:inherit;font-size:.82rem;font-weight:600;cursor:pointer;flex:0 0 auto;">Zuordnen</button>
+  </div>
+
   <div class="overlay" id="setup-overlay" hidden>
     <div class="card">
       <h2>Fast fertig</h2>
@@ -341,6 +416,345 @@
       let pending = new Map();               // itemId -> { evtRef, timeout }  (offene 10s-Fenster)
       let editingCatId = null, selectedIcon = '🛒';
 
+      // ============ Shopdict — Übergruppen-Wörterbuch ============
+      // (identische Logik wie shopdict.mjs, ohne export-Keywords)
+
+      const SUPERGROUPS = [
+        { id:'obst',         label:'Obst',                    icon:'🍎', color:'#E0563B' },
+        { id:'gemuese',      label:'Gemüse',                  icon:'🥦', color:'#6FA453' },
+        { id:'milch',        label:'Milchprodukte & Eier',    icon:'🧀', color:'#E9B949' },
+        { id:'fleisch',      label:'Fleisch & Wurst',         icon:'🥩', color:'#B5503C' },
+        { id:'fisch',        label:'Fisch & Meeresfrüchte',   icon:'🐟', color:'#4E97A8' },
+        { id:'backwaren',    label:'Brot & Backwaren',        icon:'🥖', color:'#C98A3C' },
+        { id:'grundnahrung', label:'Nudeln, Reis & Getreide', icon:'🍝', color:'#9C7B4E' },
+        { id:'konserven',    label:'Konserven & Vorräte',     icon:'🥫', color:'#8A8F4A' },
+        { id:'gewuerze',     label:'Gewürze, Öl & Saucen',   icon:'🧂', color:'#C56B4A' },
+        { id:'suesses',      label:'Süßes & Snacks',          icon:'🍫', color:'#D06AA0' },
+        { id:'getraenke',    label:'Getränke',                icon:'🥤', color:'#4F86C6' },
+        { id:'alkohol',      label:'Alkohol',                 icon:'🍷', color:'#7A4E8C' },
+        { id:'asiatisch',    label:'Asiatische Lebensmittel', icon:'🍜', color:'#E07B39' },
+        { id:'drogerie',     label:'Drogerie & Hygiene',      icon:'🧴', color:'#5FA9A0' },
+        { id:'haushalt',     label:'Haushalt & Reinigung',    icon:'🧹', color:'#7E8AA2' },
+        { id:'babykind',     label:'Baby & Kind',             icon:'🍼', color:'#E8A87C' },
+        { id:'tier',         label:'Tierbedarf',              icon:'🐾', color:'#8C7B6B' },
+        { id:'baumarkt',     label:'Baumarkt & Werkzeug',     icon:'🔧', color:'#6B6E76' },
+        { id:'buero',        label:'Büro & Schreibwaren',     icon:'✏️', color:'#A0925E' },
+        { id:'sonstiges',    label:'Sonstiges',               icon:'📦', color:'#B6AFA4' },
+      ];
+      const SG_MAP = Object.fromEntries(SUPERGROUPS.map(g => [g.id, g]));
+
+      const GROUP_ITEMS = {
+        obst:['apfel','äpfel','birne','birnen','banane','bananen','orange','orangen','mandarine','mandarinen','clementine','clementinen','klementine','zitrone','zitronen','limette','limetten','grapefruit','pampelmuse','kiwi','kiwis','ananas','mango','mangos','papaya','traube','trauben','weintrauben','erdbeere','erdbeeren','himbeere','himbeeren','blaubeere','blaubeeren','heidelbeere','heidelbeeren','brombeere','brombeeren','johannisbeere','johannisbeeren','ribisel','ribiseln','stachelbeere','stachelbeeren','kirsche','kirschen','weichsel','weichseln','pfirsich','pfirsiche','nektarine','nektarinen','aprikose','aprikosen','marille','marillen','pflaume','pflaumen','zwetschge','zwetschgen','zwetschke','zwetschken','melone','wassermelone','honigmelone','cantaloupe','granatapfel','feige','feigen','dattel','datteln','rosine','rosinen','sultaninen','kaki','sharon','litschi','litschis','lychee','physalis','cranberry','cranberrys','preiselbeere','preiselbeeren','quitte','quitten','holunder','mirabelle','mirabellen'],
+        gemuese:['tomate','tomaten','paradeiser','gurke','gurken','salatgurke','paprika','peperoni','chili','chilischote','chilischoten','zwiebel','zwiebeln','frühlingszwiebel','frühlingszwiebeln','schalotte','schalotten','knoblauch','lauch','porree','karotte','karotten','möhre','möhren','mohrrübe','sellerie','knollensellerie','staudensellerie','petersilienwurzel','pastinake','pastinaken','rote bete','rote rübe','rande','radieschen','rettich','kohlrabi','brokkoli','broccoli','blumenkohl','karfiol','romanesco','weißkohl','weißkraut','rotkohl','rotkraut','blaukraut','wirsing','kohl','grünkohl','rosenkohl','kohlsprossen','spinat','mangold','salat','kopfsalat','eisbergsalat','feldsalat','vogerlsalat','rucola','rauke','endivie','chicorée','chicoree','radicchio','aubergine','auberginen','melanzani','melanzane','zucchini','zucchino','kürbis','hokkaido','butternut','mais','kukuruz','erbse','erbsen','bohne','bohnen','grüne bohnen','fisolen','spargel','artischocke','artischocken','fenchel','ingwer','pilz','pilze','champignon','champignons','pfifferling','pfifferlinge','steinpilz','steinpilze','austernpilz','kartoffel','kartoffeln','erdapfel','erdäpfel','süßkartoffel','batate','avocado','avocados','rhabarber'],
+        milch:['milch','vollmilch','frischmilch','h-milch','haltbarmilch','magermilch','buttermilch','sahne','schlagsahne','rahm','obers','schlagobers','sauerrahm','schmand','crème fraîche','creme fraiche','joghurt','jogurt','naturjoghurt','fruchtjoghurt','quark','topfen','skyr','frischkäse','käse','gouda','edamer','emmentaler','bergkäse','butterkäse','mozzarella','parmesan','parmigiano','gorgonzola','camembert','brie','feta','hüttenkäse','cottage cheese','ricotta','mascarpone','harzer','butter','margarine','ei','eier','eigelb','kondensmilch','milchreis'],
+        fleisch:['fleisch','hackfleisch','faschiertes','gehacktes','rindfleisch','rind','schweinefleisch','schwein','kalbfleisch','kalb','lamm','lammfleisch','hähnchen','hühnchen','huhn','hühnerfleisch','hendl','pute','putenfleisch','truthahn','ente','gans','wurst','würstchen','würstel','bratwurst','weißwurst','currywurst','leberkäse','schinken','kochschinken','rohschinken','speck','bacon','salami','mortadella','lyoner','fleischwurst','kabanossi','cabanossi','wiener','frankfurter','debreziner','käsekrainer','gulasch','schnitzel','kotelett','steak','filet','braten','frikadelle','frikadellen','bulette','buletten','geschnetzeltes','gyros','döner','hackbraten','leberwurst','teewurst'],
+        fisch:['fisch','lachs','räucherlachs','thunfisch','forelle','kabeljau','dorsch','seelachs','scholle','hering','matjes','makrele','sardine','sardinen','sardelle','sardellen','anchovis','zander','karpfen','wels','pangasius','tilapia','garnele','garnelen','shrimp','shrimps','scampi','krabbe','krabben','hummer','languste','muschel','muscheln','miesmuscheln','austern','tintenfisch','calamari','kalmar','oktopus','fischstäbchen','surimi','kaviar','fischfilet'],
+        backwaren:['brot','brötchen','semmel','semmeln','weckerl','schrippe','schrippen','baguette','toast','toastbrot','vollkornbrot','mischbrot','roggenbrot','weißbrot','sonnenblumenbrot','knäckebrot','zwieback','croissant','croissants','kipferl','brezel','brezeln','brezn','laugengebäck','laugenstange','kuchen','torte','torten','muffin','muffins','donut','donuts','plunder','blätterteig','hefeteig','pizzateig','bagel','bagels','ciabatta','fladenbrot','pita','tortilla','tortillas','wrap','wraps','croutons'],
+        grundnahrung:['nudeln','pasta','spaghetti','penne','fusilli','farfalle','makkaroni','lasagne','lasagneblätter','tagliatelle','tortellini','gnocchi','spätzle','knöpfle','reis','basmati','basmatireis','risottoreis','parboiled','mehl','weizenmehl','dinkelmehl','roggenmehl','vollkornmehl','grieß','hartweizengrieß','polenta','maisgrieß','couscous','bulgur','quinoa','haferflocken','hafer','müsli','granola','cornflakes','cerealien','frühstücksflocken','graupen','hirse','zucker','puderzucker','brauner zucker','rohrzucker','backpulver','natron','hefe','trockenhefe','vanillezucker','speisestärke','stärke','maizena','maisstärke','puddingpulver','gelatine','kakaopulver','backkakao','paniermehl','semmelbrösel','kokosraspeln'],
+        konserven:['tomatenmark','passierte tomaten','dosentomaten','gehackte tomaten','dosenmais','oliven','gewürzgurken','essiggurken','cornichons','sauerkraut','kompott','apfelmus','brühe','gemüsebrühe','hühnerbrühe','rinderbrühe','gemüsefond','brühwürfel','suppe','dosensuppe','fertigsuppe','linsen','kichererbse','kichererbsen','kidneybohnen','weiße bohnen','bohnenkonserve'],
+        gewuerze:['salz','pfeffer','paprikapulver','currypulver','curry','kreuzkümmel','kümmel','koriander','zimt','muskat','muskatnuss','nelken','lorbeer','lorbeerblätter','oregano','basilikum','thymian','rosmarin','majoran','dill','schnittlauch','petersilie','estragon','salbei','minze','kurkuma','ingwerpulver','knoblauchpulver','zwiebelpulver','chiliflocken','cayenne','gewürzmischung','grillgewürz','vanille','vanilleschote','öl','olivenöl','sonnenblumenöl','rapsöl','kokosöl','erdnussöl','essig','balsamico','apfelessig','weinessig','senf','ketchup','mayonnaise','mayo','remoulade','grillsoße','salatdressing','dressing','pesto','sauce hollandaise','tomatenketchup'],
+        suesses:['schokolade','schoki','tafelschokolade','praline','pralinen','keks','kekse','plätzchen','biskuit','butterkeks','waffel','waffeln','bonbon','bonbons','gummibärchen','fruchtgummi','lakritz','lutscher','kaugummi','riegel','müsliriegel','schokoriegel','chips','kartoffelchips','nachos','salzstangen','cracker','popcorn','flips','erdnussflips','studentenfutter','nüsse','nuss','mandeln','mandel','walnüsse','walnuss','haselnüsse','haselnuss','cashew','cashewkerne','cashewnüsse','pistazien','erdnüsse','erdnuss','sonnenblumenkerne','kürbiskerne','eis','speiseeis','eiscreme','pudding','götterspeise','wackelpudding','marzipan','kuvertüre','schokostreusel','honig','marmelade','konfitüre','gelee','nutella','nussnugatcreme','erdnussbutter','erdnussmus','sirup','zuckerwatte','tiramisu'],
+        getraenke:['wasser','mineralwasser','sprudel','sprudelwasser','stilles wasser','tafelwasser','soda','limonade','limo','cola','fanta','sprite','spezi','eistee','eiskaffee','saft','fruchtsaft','apfelsaft','orangensaft','multivitaminsaft','traubensaft','tomatensaft','smoothie','nektar','schorle','apfelschorle','kaffee','espresso','filterkaffee','kaffeebohnen','kaffeepulver','instantkaffee','tee','schwarztee','grüntee','kräutertee','früchtetee','pfefferminztee','kamillentee','kakao','trinkschokolade','milchshake','energydrink','redbull','sportgetränk','getränkesirup'],
+        alkohol:['bier','pils','pilsner','weizenbier','weißbier','helles','radler','alster','wein','rotwein','weißwein','roséwein','rosé','sekt','prosecco','champagner','crémant','schaumwein','spritzer','spirituosen','schnaps','wodka','vodka','whisky','whiskey','rum','gin','tequila','likör','aperol','campari','vermouth','wermut','cognac','weinbrand','obstler','grappa','ouzo','sangria','glühwein','met','cidre','apfelwein','most','sake'],
+        asiatisch:['sojasauce','sojasoße','teriyaki','teriyakisauce','hoisin','hoisinsauce','austernsauce','fischsauce','currypaste','kokosmilch','kokosnussmilch','sesamöl','reisessig','mirin','reisnudeln','glasnudeln','mie nudeln','mienudeln','udon','soba','ramen','instantnudeln','wokgemüse','bambussprossen','bambus','wasserkastanien','sojasprossen','mungbohnen','tofu','räuchertofu','seidentofu','tempeh','nori','noriblätter','algen','wakame','miso','misopaste','dashi','panko','wasabi','sushi','sushireis','jasminreis','reispapier','frühlingsrolle','frühlingsrollen','dumplings','gyoza','wan tan','wantan','dim sum','edamame','kimchi','sambal','sambal oelek','sriracha','erdnusssauce','satay','garam masala','tandoori','naan','papadam','shiitake'],
+        drogerie:['seife','handseife','flüssigseife','duschgel','shampoo','haarshampoo','spülung','conditioner','haarspülung','haarkur','zahnpasta','zahncreme','zahnbürste','zahnseide','mundwasser','mundspülung','deo','deodorant','antitranspirant','rasierer','rasierklingen','rasierschaum','rasiergel','rasierwasser','aftershave','bodylotion','körperlotion','handcreme','gesichtscreme','creme','feuchtigkeitscreme','sonnencreme','sonnenmilch','lippenbalsam','wattestäbchen','wattepads','watte','abschminkpads','taschentücher','papiertaschentücher','toilettenpapier','klopapier','klorollen','feuchttücher','damenbinden','binden','tampons','slipeinlagen','make-up','makeup','mascara','lippenstift','nagellack','nagellackentferner','parfüm','parfum','haargel','haarspray','haarwachs','kamm','haarbürste','desinfektionsmittel','handdesinfektion','pflaster','verband','medikament','medikamente','tabletten','aspirin','ibuprofen','paracetamol','nasenspray','hustensaft','vitamine','magnesium'],
+        haushalt:['spülmittel','geschirrspülmittel','spülmaschinentabs','spültabs','geschirrspültabs','klarspüler','spülmaschinensalz','regeneriersalz','waschmittel','waschpulver','weichspüler','fleckenentferner','fleckenspray','allzweckreiniger','badreiniger','wc-reiniger','glasreiniger','fensterreiniger','bodenreiniger','essigreiniger','scheuermilch','putzmittel','reiniger','küchenrolle','küchentücher','küchenpapier','haushaltsrolle','müllbeutel','mülltüten','müllsäcke','gefrierbeutel','frischhaltefolie','alufolie','backpapier','schwamm','spülschwamm','putzlappen','mikrofasertuch','wischtuch','gummihandschuhe','putzhandschuhe','kerzen','teelichter','streichhölzer','feuerzeug','batterien','batterie','glühbirne','leuchtmittel','lufterfrischer','raumspray','duftkerze','staubsaugerbeutel','servietten','papierservietten','zahnstocher','strohhalme','trinkhalme','pappteller','plastikbecher'],
+        babykind:['windeln','babywindeln','babynahrung','babybrei','gläschen','milchpulver','säuglingsnahrung','folgemilch','schnuller','babyöl','babycreme','wundcreme','babypuder','stilleinlagen','babyfeuchttücher','fläschchen'],
+        tier:['hundefutter','katzenfutter','tierfutter','trockenfutter','nassfutter','katzenstreu','leckerli','hundeleckerli','kausnack','vogelfutter','fischfutter','kaninchenfutter','heu','einstreu'],
+        baumarkt:['schraube','schrauben','nagel','nägel','dübel','schraubenmutter','unterlegscheibe','werkzeug','hammer','schraubenzieher','schraubendreher','akkuschrauber','bohrer','bohrmaschine','säge','zange','kneifzange','wasserwaage','zollstock','maßband','cutter','teppichmesser','klebeband','panzertape','kreppband','malerband','doppelklebeband','kabelbinder','schmirgelpapier','schleifpapier','farbe','wandfarbe','lack','lasur','pinsel','farbrolle','abdeckfolie','silikon','bauschaum','kleber','holzleim','sekundenkleber','montagekleber','dichtungsmasse','gartenschlauch','blumenerde','blumentopf','samen','dünger','rasensamen','kabel','verlängerungskabel','mehrfachsteckdose','steckdose','schalter','dichtung','scharnier','vorhängeschloss','kette','seil','schnur','draht'],
+        buero:['kugelschreiber','kuli','bleistift','filzstift','marker','textmarker','edding','füller','tinte','radiergummi','anspitzer','lineal','schere','druckerpapier','kopierpapier','notizblock','notizbuch','heft','ordner','mappe','klarsichthülle','locher','tacker','hefter','tackernadeln','büroklammern','post-it','haftnotizen','uhu','tesafilm','briefumschlag','umschlag','briefmarke'],
+        sonstiges:[],
+      };
+      const MIN_SUBSTR = 5;
+
+      function normalizeName(s){ return String(s == null ? '' : s).trim().replace(/\s+/g,' ').toLocaleLowerCase('de-DE'); }
+
+      // Reverse-Map aufbauen
+      (function(){
+        const validIds = new Set(SUPERGROUPS.map(g => g.id));
+        window._BUILTIN = {};
+        for (const gid of Object.keys(GROUP_ITEMS)){
+          if (!validIds.has(gid)) continue;
+          for (const raw of GROUP_ITEMS[gid]){
+            const k = normalizeName(raw);
+            if (!k || window._BUILTIN[k]) continue;
+            window._BUILTIN[k] = gid;
+          }
+        }
+      })();
+      const BUILTIN = window._BUILTIN;
+
+      function classify(rawName, opts){
+        const groupOverrides = (opts && opts.groupOverrides) || null;
+        const globalDict     = (opts && opts.globalDict)     || null;
+        const key = normalizeName(rawName);
+        if (!key) return { group:'sonstiges', source:'fallback' };
+        if (groupOverrides && groupOverrides[key]) return { group: groupOverrides[key], source:'override' };
+        if (BUILTIN[key])                          return { group: BUILTIN[key],        source:'builtin'  };
+        if (globalDict && globalDict[key])         return { group: globalDict[key],     source:'global'   };
+        const tokens = key.split(' ').filter(Boolean);
+        if (tokens.length > 1){
+          for (const t of tokens){
+            if (groupOverrides && groupOverrides[t]) return { group: groupOverrides[t], source:'override' };
+            if (BUILTIN[t])                          return { group: BUILTIN[t],        source:'builtin'  };
+            if (globalDict && globalDict[t])         return { group: globalDict[t],     source:'global'   };
+          }
+        }
+        let best = null, bestGroup = null, bestSource = null;
+        const scan = (dict, source) => {
+          if (!dict) return;
+          for (const dk in dict){
+            if (dk.length >= MIN_SUBSTR && key.indexOf(dk) !== -1){
+              if (!best || dk.length > best.length){ best=dk; bestGroup=dict[dk]; bestSource=source; }
+            }
+          }
+        };
+        scan(BUILTIN, 'heuristic');
+        scan(globalDict, 'heuristic');
+        if (best) return { group: bestGroup, source: bestSource };
+        return { group:'sonstiges', source:'fallback' };
+      }
+
+      function sdAggregate(purchases, fromMs, classifyFn){
+        const counts={}, unassigned={}; let total=0;
+        for (const p of purchases){
+          if (fromMs && (p.ms==null || p.ms < fromMs)) continue;
+          const r = classifyFn(p.name);
+          counts[r.group] = (counts[r.group]||0) + 1; total++;
+          if (r.source==='fallback'){
+            const k = normalizeName(p.name);
+            if (!unassigned[k]) unassigned[k] = { name:p.name, count:0 };
+            unassigned[k].count++;
+          }
+        }
+        return { counts, total, unassigned };
+      }
+
+      function sdDonutSegments(counts){
+        const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+        const total = entries.reduce((s,[,v])=>s+v,0);
+        let cum=0;
+        const segments = entries.map(([group,value])=>{
+          const frac = total ? value/total : 0;
+          const seg = { group, value, frac, start:cum };
+          cum += frac; return seg;
+        });
+        return { total, segments };
+      }
+
+      // ============ Override-State ============
+      let groupOverrides = {};   // normName -> groupId  (aus groups/{gid}/meta/dictionary)
+      let globalDict     = {};   // normName -> groupId  (aus shared/dictionary, best-effort)
+      let overrideUnsub  = null;
+
+      function classifyItem(name){ return classify(name, { groupOverrides, globalDict }); }
+
+      async function loadGlobalDict(){
+        try {
+          const snap = await getDoc(doc(db,'shared','dictionary'));
+          if (snap.exists()) globalDict = snap.data().entries || {};
+        } catch(e){ /* still works without it */ }
+      }
+
+      function subscribeGroupDict(gid){
+        if (overrideUnsub){ overrideUnsub(); overrideUnsub=null; }
+        if (!gid){ groupOverrides={}; return; }
+        overrideUnsub = onSnapshot(doc(db,'groups',gid,'meta','dictionary'), (snap) => {
+          groupOverrides = snap.exists() ? (snap.data().entries || {}) : {};
+        }, ()=>{});
+      }
+
+      async function saveOverride(normKey, groupId){
+        if (!currentId) return;
+        // Gruppen-Override (immer)
+        try {
+          await setDoc(doc(db,'groups',currentId,'meta','dictionary'),
+            { entries: { [normKey]: groupId } }, { merge:true });
+        } catch(e){ groupOverrides[normKey]=groupId; } // offline-Fallback in memory
+        // Globaler Beitrag (best-effort, scheitert still)
+        try {
+          await setDoc(doc(db,'shared','dictionary'),
+            { entries: { [normKey]: groupId } }, { merge:true });
+          globalDict[normKey] = groupId;
+        } catch(e){}
+      }
+
+      // ============ Stats ============
+      const PERIODS = [
+        { id:'7d',  label:'7 T',  ms: 7*24*3600*1000 },
+        { id:'30d', label:'30 T', ms:30*24*3600*1000 },
+        { id:'90d', label:'90 T', ms:90*24*3600*1000 },
+        { id:'1y',  label:'1 J',  ms:365*24*3600*1000},
+        { id:'all', label:'Alles',ms:0 },
+      ];
+      let statsPeriod = '30d';
+      let statsScope  = 'cat';   // 'cat' | 'all'
+      let cachedPurchases = null; // [{ name, ms }]  nach Scope geladen
+      let statsOpen = false;
+
+      async function openStats(){
+        statsOpen = true;
+        backdrop.hidden = false;
+        $('stats-sheet').hidden = false;
+        renderPeriodBar();
+        renderScopeToggle();
+        cachedPurchases = null;
+        await loadAndRenderStats();
+      }
+      function closeStats(){
+        statsOpen = false;
+        $('stats-sheet').hidden = true;
+        backdrop.hidden = true;
+      }
+
+      function renderPeriodBar(){
+        const bar = $('period-bar');
+        bar.innerHTML = PERIODS.map(p =>
+          `<button class="chip period-chip${statsPeriod===p.id?' active':''}" data-pid="${p.id}">${p.label}</button>`
+        ).join('');
+      }
+      function renderScopeToggle(){
+        $('scope-cat').classList.toggle('active', statsScope==='cat');
+        $('scope-all').classList.toggle('active', statsScope==='all');
+      }
+
+      async function loadAndRenderStats(){
+        const donutWrap = $('donut-wrap');
+        donutWrap.style.opacity = '0.4';
+        try {
+          let purchases = [];
+          if (statsScope === 'cat'){
+            if (!currentId || !currentCategoryId){ renderDonut([], 0); return; }
+            const snap = await getDocs(purchasesCol());
+            snap.forEach(d => {
+              const ts = d.data().ts;
+              purchases.push({ name: d.data().name, ms: ts ? ts.toMillis() : null });
+            });
+          } else {
+            if (!currentId){ renderDonut([], 0); return; }
+            const catSnap = await getDocs(collection(db,'groups',currentId,'categories'));
+            for (const catDoc of catSnap.docs){
+              const pSnap = await getDocs(collection(db,'groups',currentId,'categories',catDoc.id,'purchases'));
+              pSnap.forEach(d => {
+                const ts = d.data().ts;
+                purchases.push({ name: d.data().name, ms: ts ? ts.toMillis() : null });
+              });
+            }
+          }
+          cachedPurchases = purchases;
+          renderStatsFromCache();
+        } catch(e){
+          $('stats-legend').innerHTML = '<p style="color:var(--danger);font-size:.88rem;">Konnte nicht laden.</p>';
+        }
+        donutWrap.style.opacity = '1';
+      }
+
+      function renderStatsFromCache(){
+        if (!cachedPurchases) return;
+        const period = PERIODS.find(p=>p.id===statsPeriod);
+        const fromMs = period && period.ms ? Date.now() - period.ms : 0;
+        const { counts, total, unassigned } = sdAggregate(cachedPurchases, fromMs, classifyItem);
+        const { segments } = sdDonutSegments(counts);
+        renderDonut(segments, total);
+        renderLegend(segments, total);
+        renderUnassigned(unassigned);
+      }
+
+      function renderDonut(segments, total){
+        const svg = $('donut-svg');
+        // Alle alten Segmente entfernen (aber Hintergrundkreis + Text behalten)
+        svg.querySelectorAll('.donut-seg').forEach(e=>e.remove());
+        $('donut-center').textContent = total > 0 ? total : '–';
+
+        if (segments.length === 0 || total === 0) return;
+
+        const R=75, CX=100, CY=100, SW=32;
+        const circ = 2*Math.PI*R;
+        const GAP  = segments.length > 1 ? Math.min(0.005, 0.003) : 0;
+
+        for (const seg of segments){
+          if (seg.frac < 0.001) continue;
+          const dashLen = Math.max(0, (seg.frac - GAP) * circ);
+          const offset  = circ * (0.25 - seg.start); // Start oben (12-Uhr)
+          const sg = document.createElementNS('http://www.w3.org/2000/svg','circle');
+          sg.setAttribute('class','donut-seg');
+          sg.setAttribute('cx', CX); sg.setAttribute('cy', CY); sg.setAttribute('r', R);
+          sg.setAttribute('fill','none');
+          sg.setAttribute('stroke', SG_MAP[seg.group]?.color || '#ccc');
+          sg.setAttribute('stroke-width', SW);
+          sg.setAttribute('stroke-dasharray', `${dashLen} ${circ - dashLen}`);
+          sg.setAttribute('stroke-dashoffset', offset);
+          svg.insertBefore(sg, $('donut-center'));
+        }
+      }
+
+      function renderLegend(segments, total){
+        const el = $('stats-legend');
+        if (segments.length === 0){
+          el.innerHTML = '<p style="color:var(--ink-soft);font-size:.88rem;text-align:center;padding:8px 0;">Keine Käufe im gewählten Zeitraum.</p>';
+          return;
+        }
+        el.innerHTML = segments.map(seg => {
+          const sg = SG_MAP[seg.group] || { label:seg.group, icon:'📦', color:'#ccc' };
+          const pct = total ? Math.round(seg.frac*100) : 0;
+          return `<div class="legend-row" data-sg="${seg.group}">
+            <span class="legend-dot" style="background:${sg.color};"></span>
+            <span class="legend-label">${sg.icon} ${sg.label}</span>
+            <span class="legend-count">${seg.value}× · ${pct}%</span>
+          </div>`;
+        }).join('');
+      }
+
+      function renderUnassigned(unassigned){
+        const entries = Object.values(unassigned).sort((a,b)=>b.count-a.count);
+        const sec = $('unassigned-section');
+        const lst = $('unassigned-list');
+        if (entries.length === 0){ sec.hidden=true; return; }
+        sec.hidden = false;
+        lst.innerHTML = entries.map(e =>
+          `<div class="unassigned-item" data-uname="${esc(e.name)}">
+            <span class="unassigned-name">${esc(e.name)}</span>
+            <span class="unassigned-count">${e.count}×</span>
+            <span style="color:var(--accent);font-size:.8rem;font-weight:600;">Zuordnen →</span>
+          </div>`
+        ).join('');
+      }
+
+      // ============ Übergruppen-Picker ============
+      let pickerResolve = null;
+
+      function openSgPicker(title, subtitle){
+        return new Promise(resolve => {
+          pickerResolve = resolve;
+          $('sg-picker-title').textContent = title;
+          $('sg-picker-sub').textContent   = subtitle || '';
+          $('sg-picker-grid').innerHTML = SUPERGROUPS.map(sg =>
+            `<button class="sg-card" data-sgid="${sg.id}">
+               <span class="sg-card-ico">${sg.icon}</span>
+               <span class="sg-card-label">${sg.label}</span>
+             </button>`
+          ).join('');
+          backdrop.hidden=false;
+          $('sg-picker').hidden=false;
+        });
+      }
+      function closeSgPicker(result){
+        $('sg-picker').hidden=true;
+        if (!statsOpen) backdrop.hidden=true;
+        if (pickerResolve){ pickerResolve(result); pickerResolve=null; }
+      }
+
+      // ============ Post-Add-Toast für unbekannte Produkte ============
+      let toastTimeout=null, toastName='';
+      function showSgToast(name){
+        toastName=name;
+        $('sg-toast-text').textContent = `„${name}" – Übergruppe?`;
+        $('sg-toast').hidden=false;
+        clearTimeout(toastTimeout);
+        toastTimeout=setTimeout(hideSgToast, 6000);
+      }
+      function hideSgToast(){ $('sg-toast').hidden=true; toastName=''; }
+
       renderIconGrid();
 
       signInAnonymously(auth).catch(() => { setStatus('error'); showBanner('Anmeldung fehlgeschlagen. Prüfe in Firebase, ob die anonyme Anmeldung aktiviert ist.'); });
@@ -391,6 +805,8 @@
         if (itemsUnsub){ itemsUnsub(); itemsUnsub=null; }
         currentId = id || null; currentCategoryId = null; categories = []; currentItems = [];
         persistCurrent(); renderApp(); closeAll(); renderTabs();
+        subscribeGroupDict(currentId);
+        if (!globalDict || Object.keys(globalDict).length===0) loadGlobalDict();
         if (currentId) subscribeCategories(currentId); else render([]);
       }
 
@@ -447,8 +863,33 @@
         const name = input.value.trim();
         if (!name || !currentId || !currentCategoryId) return;
         input.value=''; input.focus();
-        try { await addDoc(itemsCol(), { name, checked:false, count:0, createdAt: serverTimestamp() }); }
-        catch(e){ showBanner('Konnte nicht speichern – Verbindung prüfen.'); }
+        try {
+          // --- Dedup: Gleichnamige Einträge zusammenführen ---
+          const norm = normalizeName(name);
+          const matches = currentItems.filter(i => normalizeName(i.name) === norm);
+
+          if (matches.length > 0){
+            // Kanonisches Dokument = höchster count (oder erstes)
+            const canon = matches.reduce((a,b)=> (b.count||0) > (a.count||0) ? b : a);
+            const dupes  = matches.filter(i => i.id !== canon.id);
+            const extraCount = dupes.reduce((s,i)=>(s + (i.count||0)), 0);
+            const needsUncheck = canon.checked;
+            const updates = {};
+            if (needsUncheck)  updates.checked = false;
+            if (extraCount>0)  updates.count   = increment(extraCount);
+            if (Object.keys(updates).length > 0) await updateDoc(itemDoc(canon.id), updates);
+            for (const d of dupes){
+              const p=pending.get(d.id); if(p){ clearTimeout(p.timeout); pending.delete(d.id); }
+              await deleteDoc(itemDoc(d.id));
+            }
+          } else {
+            // Neuer Artikel
+            await addDoc(itemsCol(), { name, checked:false, count:0, createdAt: serverTimestamp() });
+            // Toast wenn unbekannte Übergruppe
+            const r = classifyItem(name);
+            if (r.source === 'fallback') showSgToast(name);
+          }
+        } catch(e){ showBanner('Konnte nicht speichern – Verbindung prüfen.'); }
       }
       async function removeItem(id){ try { await deleteDoc(itemDoc(id)); } catch(e){} const p=pending.get(id); if(p){ clearTimeout(p.timeout); pending.delete(id); } }
 
@@ -546,7 +987,7 @@
 
       // ============ Menüs / Dialoge ============
       function openEl(el){ backdrop.hidden=false; el.hidden=false; }
-      function closeAll(){ backdrop.hidden=true; [groupSheet,manageSheet,createModal,joinModal,shareModal,categoryModal].forEach(e => e.hidden=true); }
+      function closeAll(){ backdrop.hidden=true; statsOpen=false; [groupSheet,manageSheet,createModal,joinModal,shareModal,categoryModal,$('stats-sheet'),$('sg-picker')].forEach(e => e.hidden=true); if(pickerResolve){pickerResolve(null);pickerResolve=null;} }
       function openShare(){
         const g = groups.find(x => x.id === currentId); if (!g) return;
         shareCode.textContent = g.code; qrBox.innerHTML = '';
@@ -571,6 +1012,43 @@
       }
 
       // ---- Verdrahtung ----
+
+      // Stats-Button
+      $('stats-btn').addEventListener('click', openStats);
+      $('stats-close').addEventListener('click', closeStats);
+      $('stats-sheet').addEventListener('click', async (e) => {
+        // Zeitraum-Chips
+        const pchip = e.target.closest('[data-pid]');
+        if (pchip){ statsPeriod=pchip.dataset.pid; renderPeriodBar(); renderStatsFromCache(); return; }
+        // Nicht-zugeordnet Eintrag
+        const ui = e.target.closest('[data-uname]');
+        if (ui){
+          const rawName = ui.querySelector('.unassigned-name').textContent;
+          const chosen = await openSgPicker(`„${rawName}" zuordnen`, 'Wähle die passende Übergruppe.');
+          if (chosen){
+            await saveOverride(normalizeName(rawName), chosen);
+            cachedPurchases = null;
+            await loadAndRenderStats();
+          }
+          return;
+        }
+      });
+      $('scope-cat').addEventListener('click', () => { statsScope='cat'; renderScopeToggle(); cachedPurchases=null; loadAndRenderStats(); });
+      $('scope-all').addEventListener('click', () => { statsScope='all'; renderScopeToggle(); cachedPurchases=null; loadAndRenderStats(); });
+
+      // Picker
+      $('sg-picker-grid').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-sgid]'); if (!btn) return;
+        closeSgPicker(btn.dataset.sgid);
+      });
+      $('sg-picker-cancel').addEventListener('click', () => closeSgPicker(null));
+
+      // Toast
+      $('sg-toast-btn').addEventListener('click', async () => {
+        const name = toastName; hideSgToast();
+        const chosen = await openSgPicker(`„${name}" zuordnen`, 'Wähle die passende Übergruppe.');
+        if (chosen) await saveOverride(normalizeName(name), chosen);
+      });
       addBtn.addEventListener('click', addItem);
       input.addEventListener('keydown', e => { if (e.key === 'Enter') addItem(); });
       mainEl.addEventListener('click', (e) => {
