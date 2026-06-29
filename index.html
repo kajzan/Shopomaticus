@@ -27,59 +27,46 @@
     *{box-sizing:border-box;}
     html,body{height:100%;margin:0;}
     body{background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;}
-
     .app{height:100dvh;max-width:560px;margin:0 auto;display:flex;flex-direction:column;}
 
     /* Kopfzeile mit Gruppen-Umschalter */
-    header{
-      flex:0 0 auto;padding:calc(env(safe-area-inset-top) + 16px) 18px 12px;
-      border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;
-    }
-    .group-switch{
-      display:inline-flex;align-items:center;gap:6px;background:transparent;border:none;cursor:pointer;
-      padding:5px 7px;margin:-5px -7px;border-radius:10px;min-width:0;
-    }
+    header{flex:0 0 auto;padding:calc(env(safe-area-inset-top) + 16px) 18px 12px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;}
+    .group-switch{display:inline-flex;align-items:center;gap:6px;background:transparent;border:none;cursor:pointer;padding:5px 7px;margin:-5px -7px;border-radius:10px;min-width:0;}
     .group-switch:hover{background:var(--accent-tint);}
-    .group-name{
-      font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:1.3rem;letter-spacing:-.02em;
-      color:var(--ink);max-width:58vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-    }
+    .group-name{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:1.3rem;letter-spacing:-.02em;color:var(--ink);max-width:58vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     .group-switch svg{width:18px;height:18px;color:var(--ink-soft);flex:0 0 auto;}
     .status{display:inline-flex;align-items:center;gap:7px;font-size:.76rem;color:var(--ink-soft);white-space:nowrap;flex:0 0 auto;}
     .status .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);transition:background .2s ease;}
 
-    /* Listenbereich – dichter als zuvor */
+    /* Kategorie-Reiter */
+    .tabs{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid var(--line);}
+    .tabs-scroll{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;flex:1;padding:1px;}
+    .tabs-scroll::-webkit-scrollbar{display:none;}
+    .chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 13px;font:inherit;font-size:.92rem;font-weight:500;cursor:pointer;white-space:nowrap;transition:background .15s,border-color .15s,color .15s;}
+    .chip:hover{background:#F3EFE8;}
+    .chip.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+    .chip-ico{font-size:1rem;line-height:1;}
+    .chip-add{font-size:1.2rem;font-weight:400;color:var(--ink-soft);padding:7px 12px;}
+    .tabs-gear{flex:0 0 auto;width:38px;height:38px;border:none;background:transparent;color:var(--ink-soft);font-size:1.2rem;cursor:pointer;border-radius:9px;}
+    .tabs-gear:hover{background:#F3EFE8;}
+
+    /* Listenbereich */
     main{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:6px 12px 14px;}
     .list-label{font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);margin:10px 8px 4px;}
     .list{list-style:none;margin:0;padding:0;}
-
-    .item{
-      display:flex;align-items:center;gap:11px;background:var(--surface);
-      border:1px solid var(--line);border-radius:var(--radius);
-      padding:9px 10px 9px 12px;margin:3px 0;box-shadow:var(--shadow);
-      transition:background .18s ease,border-color .18s ease;
-    }
+    .item{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:9px 10px 9px 12px;margin:3px 0;box-shadow:var(--shadow);transition:background .18s ease,border-color .18s ease;}
     .item.done{background:transparent;border-color:transparent;box-shadow:none;}
-
-    .check{
-      flex:0 0 auto;width:24px;height:24px;border-radius:50%;border:2px solid var(--accent);
-      background:transparent;display:grid;place-items:center;cursor:pointer;padding:0;
-      transition:background .18s ease,border-color .18s ease;
-    }
+    .check{flex:0 0 auto;width:24px;height:24px;border-radius:50%;border:2px solid var(--accent);background:transparent;display:grid;place-items:center;cursor:pointer;padding:0;transition:background .18s ease,border-color .18s ease;}
     .check::after{content:"";width:8px;height:4px;border-left:2.4px solid #fff;border-bottom:2.4px solid #fff;transform:rotate(-45deg) scale(0);margin-top:-2px;transition:transform .18s ease;}
     .item.done .check{background:var(--ok);border-color:var(--ok);}
     .item.done .check::after{transform:rotate(-45deg) scale(1);}
-
     .name{flex:1;font-size:1rem;line-height:1.3;color:var(--ink);word-break:break-word;transition:color .18s ease;}
     .item.done .name{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--muted);}
-
     .del{flex:0 0 auto;width:30px;height:30px;border:none;background:transparent;color:var(--muted);font-size:1.25rem;line-height:1;cursor:pointer;border-radius:8px;transition:color .15s,background .15s;}
     .del:hover{color:var(--danger);background:#FAF2EF;}
-
     .divider{display:flex;align-items:center;gap:12px;margin:14px 8px 2px;}
     .divider span{font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
     .divider::after{content:"";flex:1;height:1px;background:var(--line);}
-
     .empty{text-align:center;padding:48px 24px;color:var(--ink-soft);}
     .empty svg{width:42px;height:42px;color:var(--accent);opacity:.85;margin-bottom:12px;}
     .empty-title{font-family:"Bricolage Grotesque",sans-serif;font-weight:600;font-size:1.1rem;color:var(--ink);margin:0 0 5px;}
@@ -103,7 +90,7 @@
     .btn-ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line);border-radius:12px;padding:13px 18px;font:inherit;font-weight:600;font-size:1rem;cursor:pointer;transition:background .15s;}
     .btn-ghost:hover{background:#F3EFE8;}
 
-    /* Willkommen (noch keine Gruppe) */
+    /* Willkommen */
     .welcome{position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;padding:28px;z-index:30;}
     .welcome-inner{max-width:360px;width:100%;text-align:center;}
     .welcome-inner .logo{width:54px;height:54px;color:var(--accent);margin:0 auto 14px;}
@@ -111,11 +98,9 @@
     .welcome-inner p{color:var(--ink-soft);line-height:1.55;margin:0 0 24px;}
     .welcome-inner .btn-primary,.welcome-inner .btn-ghost{display:block;width:100%;margin:10px 0;}
 
-    /* Hintergrund-Abdunkelung für Menüs/Dialoge */
+    /* Menüs / Dialoge */
     .backdrop{position:fixed;inset:0;background:rgba(42,38,34,.45);z-index:40;}
-
-    /* Bottom-Sheet (Gruppenmenü) */
-    .sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--surface);border-radius:20px 20px 0 0;padding:8px 18px calc(env(safe-area-inset-bottom) + 16px);max-width:560px;margin:0 auto;box-shadow:0 -10px 40px rgba(42,38,34,.18);}
+    .sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--surface);border-radius:20px 20px 0 0;padding:8px 18px calc(env(safe-area-inset-bottom) + 16px);max-width:560px;margin:0 auto;box-shadow:0 -10px 40px rgba(42,38,34,.18);max-height:80vh;overflow-y:auto;}
     .sheet-handle{width:38px;height:4px;background:var(--line);border-radius:99px;margin:6px auto 10px;}
     .sheet-title{font-family:"Bricolage Grotesque",sans-serif;font-size:1.15rem;margin:0 0 6px;}
     .row-action{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:transparent;border:none;padding:13px 6px;font:inherit;font-size:1rem;color:var(--ink);cursor:pointer;border-radius:10px;}
@@ -132,8 +117,13 @@
     .group-item.active .gi-name{color:var(--accent-deep);}
     .gi-check{width:18px;height:18px;color:var(--accent);flex:0 0 auto;}
 
-    /* Zentrierter Dialog */
-    .modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:50;background:var(--surface);border-radius:18px;padding:24px 22px;width:calc(100% - 44px);max-width:380px;box-shadow:0 20px 50px rgba(42,38,34,.25);}
+    .manage-row{display:flex;align-items:center;gap:11px;padding:11px 6px;border-radius:10px;cursor:pointer;}
+    .manage-row:hover{background:#F3EFE8;}
+    .mr-ico{font-size:1.2rem;}
+    .mr-name{flex:1;font-weight:600;}
+    .mr-edit{border:none;background:transparent;color:var(--ink-soft);font-size:1.05rem;cursor:pointer;width:32px;height:32px;border-radius:8px;}
+
+    .modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:50;background:var(--surface);border-radius:18px;padding:24px 22px;width:calc(100% - 44px);max-width:380px;box-shadow:0 20px 50px rgba(42,38,34,.25);max-height:88vh;overflow-y:auto;}
     .modal h2{font-family:"Bricolage Grotesque",sans-serif;font-size:1.3rem;margin:0 0 8px;}
     .modal p{color:var(--ink-soft);font-size:.95rem;line-height:1.5;margin:0 0 16px;}
     .modal input{width:100%;font-size:16px;font-family:inherit;padding:13px 15px;border:1.5px solid var(--line);border-radius:12px;background:var(--bg);outline:none;}
@@ -145,7 +135,17 @@
     .qr-box{display:grid;place-items:center;padding:14px;background:#fff;border:1px solid var(--line);border-radius:14px;margin-bottom:4px;}
     .qr-box img,.qr-box canvas{display:block;}
 
-    /* Einrichtungs-Hinweis */
+    .field{margin:14px 0 0;}
+    .field label{display:block;font-size:.82rem;font-weight:600;color:var(--ink-soft);margin-bottom:6px;}
+    .field-row{display:flex;gap:10px;}
+    .field-row .field{flex:1;margin-top:14px;}
+    .icon-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;}
+    .icon-opt{aspect-ratio:1;border:1.5px solid var(--line);background:var(--surface);border-radius:10px;font-size:1.2rem;cursor:pointer;display:grid;place-items:center;padding:0;}
+    .icon-opt.sel{border-color:var(--accent);background:var(--accent-tint);}
+    .cat-hint{font-size:.8rem;color:var(--ink-soft);margin:8px 0 0;line-height:1.4;}
+    .cat-delete{margin-top:18px;width:100%;background:transparent;border:1.5px solid #E7C3BA;color:var(--danger);border-radius:12px;padding:11px;font:inherit;font-weight:600;cursor:pointer;}
+    .cat-delete:hover{background:#FAF2EF;}
+
     .overlay{position:fixed;inset:0;background:rgba(42,38,34,.5);display:grid;place-items:center;padding:24px;z-index:60;}
     .card{background:var(--surface);border-radius:18px;padding:26px 24px;max-width:400px;box-shadow:0 20px 50px rgba(42,38,34,.25);}
     .card h2{font-family:"Bricolage Grotesque",sans-serif;margin:0 0 10px;font-size:1.25rem;}
@@ -167,6 +167,11 @@
       <span class="status"><span class="dot" id="status-dot"></span><span id="status-text">Verbinde …</span></span>
     </header>
 
+    <nav class="tabs">
+      <div class="tabs-scroll" id="tabs-scroll"></div>
+      <button class="tabs-gear" id="manage-cats" aria-label="Kategorien verwalten">⚙</button>
+    </nav>
+
     <main id="main">
       <div class="banner" id="banner" hidden></div>
       <p class="list-label" id="todo-label" hidden></p>
@@ -186,7 +191,7 @@
     </div>
   </div>
 
-  <!-- Willkommensbildschirm: noch keine Gruppe -->
+  <!-- Willkommen -->
   <div class="welcome" id="welcome" hidden>
     <div class="welcome-inner">
       <svg class="logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18l-1.6 9.5a2 2 0 0 1-2 1.7H6.6a2 2 0 0 1-2-1.7L3 6Z"/><path d="M8 6 9.5 2.5M16 6 14.5 2.5"/></svg>
@@ -210,6 +215,15 @@
     <hr>
     <button class="row-action" id="sheet-share"><span class="ico">⤴</span> Diese Gruppe teilen (Code &amp; QR)</button>
     <button class="row-action danger" id="sheet-leave"><span class="ico">✕</span> Diese Gruppe verlassen</button>
+  </div>
+
+  <!-- Kategorien verwalten -->
+  <div class="sheet" id="manage-sheet" hidden>
+    <div class="sheet-handle"></div>
+    <h2 class="sheet-title">Kategorien</h2>
+    <div id="manage-list"></div>
+    <hr>
+    <button class="row-action" id="manage-add"><span class="ico">＋</span> Neue Kategorie</button>
   </div>
 
   <!-- Gruppe erstellen -->
@@ -247,7 +261,36 @@
     </div>
   </div>
 
-  <!-- Einrichtungs-Hinweis (wenn firebase-config.js fehlt) -->
+  <!-- Kategorie anlegen / bearbeiten -->
+  <div class="modal" id="category-modal" hidden>
+    <h2 id="cat-modal-title">Neue Kategorie</h2>
+    <div class="field">
+      <label for="cat-name">Name</label>
+      <input id="cat-name" type="text" placeholder="z. B. Supermarkt" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>Symbol</label>
+      <div class="icon-grid" id="icon-grid"></div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="cat-top">Top-Produkte (Mitte)</label>
+        <input id="cat-top" type="number" inputmode="numeric" min="1" max="100" value="10">
+      </div>
+      <div class="field">
+        <label for="cat-keep">Im Verlauf behalten (unten)</label>
+        <input id="cat-keep" type="number" inputmode="numeric" min="0" max="500" value="50">
+      </div>
+    </div>
+    <p class="cat-hint">Diese beiden Werte steuern die Häufigkeits-Ansicht, die in der nächsten Phase dazukommt. Du kannst sie pro Kategorie unterschiedlich setzen.</p>
+    <button class="cat-delete" id="cat-delete" hidden>Kategorie löschen</button>
+    <div class="modal-actions">
+      <button class="btn-ghost" data-close>Abbrechen</button>
+      <button class="btn-primary" id="cat-save">Speichern</button>
+    </div>
+  </div>
+
+  <!-- Einrichtungs-Hinweis -->
   <div class="overlay" id="setup-overlay" hidden>
     <div class="card">
       <h2>Fast fertig</h2>
@@ -261,13 +304,12 @@
     import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js';
     import {
       initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
-      collection, doc, addDoc, setDoc, getDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp
+      collection, doc, addDoc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, onSnapshot, serverTimestamp
     } from 'https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js';
 
     boot();
 
     async function boot(){
-      // Konfiguration aus eigener Datei laden
       let cfg = null;
       try { cfg = (await import('./firebase-config.js')).firebaseConfig; } catch(e){ cfg = null; }
       if (!cfg || String(cfg.apiKey || '').includes('EINFÜGEN')) {
@@ -282,7 +324,6 @@
       const db   = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
       const auth = getAuth(app);
 
-      // ---- DOM ----
       const $ = (id) => document.getElementById(id);
       const todoList=$('todo-list'), doneList=$('done-list'), todoLabel=$('todo-label'),
             doneDivider=$('done-divider'), doneLabel=$('done-label'), emptyList=$('empty-list'),
@@ -290,98 +331,135 @@
             banner=$('banner'), mainEl=$('main'),
             welcome=$('welcome'), currentGroupName=$('current-group-name'),
             backdrop=$('backdrop'), groupSheet=$('group-sheet'), groupListEl=$('group-list'),
-            createModal=$('create-modal'), joinModal=$('join-modal'), shareModal=$('share-modal'),
+            manageSheet=$('manage-sheet'), manageList=$('manage-list'),
+            tabsScroll=$('tabs-scroll'),
+            createModal=$('create-modal'), joinModal=$('join-modal'), shareModal=$('share-modal'), categoryModal=$('category-modal'),
             createName=$('create-name'), createConfirm=$('create-confirm'),
             joinCodeInput=$('join-code'), joinConfirm=$('join-confirm'), joinError=$('join-error'),
-            shareCode=$('share-code'), qrBox=$('qr-box'), copyCode=$('copy-code');
+            shareCode=$('share-code'), qrBox=$('qr-box'), copyCode=$('copy-code'),
+            catName=$('cat-name'), catTop=$('cat-top'), catKeep=$('cat-keep'),
+            iconGrid=$('icon-grid'), catSave=$('cat-save'), catDelete=$('cat-delete');
 
       const collator = new Intl.Collator('de', { sensitivity:'base' });
-      const LS_GROUPS='shopomat_groups', LS_CURRENT='shopomat_current';
+      const LS_GROUPS='shopomat_groups', LS_CURRENT='shopomat_current', LS_CAT='shopomat_cat';
+      const ICONS = ['🛒','🔨','🧴','🥖','🧊','🐟','🥦','🍎','🧀','🍷','🧹','💊','🌱','🐾','🎁','📦'];
 
-      // ---- Zustand (im Gerät gespeichert) ----
-      let groups = loadGroups();           // [{id,name,code}]
-      let currentId = localStorage.getItem(LS_CURRENT) || null;
-      let itemsUnsub = null;
+      // ---- Zustand ----
+      let groups = loadGroups();           // [{id,name,code}]  – im Gerät gespeichert
+      let currentId = localStorage.getItem(LS_CURRENT) || null; // aktuelle Gruppe
+      let categories = [];                 // Kategorien der aktuellen Gruppe
+      let currentCategoryId = null;        // aktuelle Kategorie
+      let catMemory = loadCatMemory();     // { groupId: categoryId } – zuletzt gewählte Kategorie je Gruppe
+      let catUnsub = null, itemsUnsub = null;
+      let editingCatId = null, selectedIcon = '🛒';
+
+      renderIconGrid();
 
       // ---- Anmeldung & Start ----
-      signInAnonymously(auth).catch(() => {
-        setStatus('error');
-        showBanner('Anmeldung fehlgeschlagen. Prüfe in Firebase, ob die anonyme Anmeldung aktiviert ist.');
-      });
+      signInAnonymously(auth).catch(() => { setStatus('error'); showBanner('Anmeldung fehlgeschlagen. Prüfe in Firebase, ob die anonyme Anmeldung aktiviert ist.'); });
 
       onAuthStateChanged(auth, async (user) => {
         if (!user) return;
         setStatus('connected');
-
-        // Per QR/Link beigetreten? (?join=CODE)
         const joinCode = new URLSearchParams(location.search).get('join');
         if (joinCode) {
-          try {
-            const g = await joinByCode(joinCode);
-            addOrUpdateGroup(g);
-            history.replaceState({}, '', location.pathname);
-            setCurrentGroup(g.id);
-            showBanner(`Beigetreten: „${g.name}"`);
-            return;
-          } catch(e) {
-            history.replaceState({}, '', location.pathname);
-            showBanner('Diese Gruppe wurde nicht gefunden – bitte Code prüfen.');
-          }
+          try { const g = await joinByCode(joinCode); addOrUpdateGroup(g); history.replaceState({}, '', location.pathname); setCurrentGroup(g.id); showBanner(`Beigetreten: „${g.name}"`); return; }
+          catch(e){ history.replaceState({}, '', location.pathname); showBanner('Diese Gruppe wurde nicht gefunden – bitte Code prüfen.'); }
         }
-
         if (currentId && groups.some(g => g.id === currentId)) setCurrentGroup(currentId);
         else if (groups.length) setCurrentGroup(groups[0].id);
-        else renderApp(); // Willkommen
+        else renderApp();
       });
 
       window.addEventListener('offline', () => setStatus('offline'));
       window.addEventListener('online',  () => setStatus('connected'));
 
-      // ============ Gruppen-Logik ============
+      // ============ Gruppen ============
       function loadGroups(){ try { return JSON.parse(localStorage.getItem(LS_GROUPS) || '[]'); } catch(e){ return []; } }
       function persistGroups(){ localStorage.setItem(LS_GROUPS, JSON.stringify(groups)); }
       function persistCurrent(){ currentId ? localStorage.setItem(LS_CURRENT, currentId) : localStorage.removeItem(LS_CURRENT); }
+      function loadCatMemory(){ try { return JSON.parse(localStorage.getItem(LS_CAT) || '{}'); } catch(e){ return {}; } }
+      function persistCatMemory(){ localStorage.setItem(LS_CAT, JSON.stringify(catMemory)); }
       function addOrUpdateGroup(g){ const i=groups.findIndex(x=>x.id===g.id); if(i>=0) groups[i]=g; else groups.push(g); persistGroups(); }
       function removeGroup(id){ groups=groups.filter(g=>g.id!==id); persistGroups(); }
 
-      // erzeugt eine neue Gruppe mit eindeutigem 6-stelligen Code
       async function createGroup(name){
         let code='', taken=true, tries=0;
-        while (taken && tries < 25){
-          code = String(Math.floor(100000 + Math.random()*900000)); // 100000–999999
-          const s = await getDoc(doc(db,'codes',code));
-          taken = s.exists(); tries++;
-        }
+        while (taken && tries < 25){ code = String(Math.floor(100000 + Math.random()*900000)); const s = await getDoc(doc(db,'codes',code)); taken = s.exists(); tries++; }
         const gRef = await addDoc(collection(db,'groups'), { name, code, createdAt: serverTimestamp() });
         await setDoc(doc(db,'codes',code), { groupId: gRef.id });
+        await seedDefaultCategories(gRef.id);
         return { id: gRef.id, name, code };
       }
-
-      // schlägt eine Gruppe per Code nach
       async function joinByCode(code){
         code = String(code).trim();
         const cs = await getDoc(doc(db,'codes',code));
         if (!cs.exists()) throw new Error('not found');
         const groupId = cs.data().groupId;
         const gs = await getDoc(doc(db,'groups',groupId));
-        return {
-          id: groupId,
-          name: gs.exists() ? (gs.data().name || 'Gruppe') : 'Gruppe',
-          code: gs.exists() ? (gs.data().code || code) : code
-        };
+        return { id: groupId, name: gs.exists() ? (gs.data().name || 'Gruppe') : 'Gruppe', code: gs.exists() ? (gs.data().code || code) : code };
       }
 
       function setCurrentGroup(id){
+        if (catUnsub){ catUnsub(); catUnsub=null; }
         if (itemsUnsub){ itemsUnsub(); itemsUnsub=null; }
         currentId = id || null;
+        currentCategoryId = null;
+        categories = [];
         persistCurrent();
-        if (currentId) subscribeItems();
         renderApp();
         closeAll();
+        renderTabs();
+        if (currentId) subscribeCategories(currentId);
+        else render([]);
       }
 
-      // ============ Artikel-Logik (pro Gruppe) ============
-      function itemsCol(){ return collection(db,'groups',currentId,'items'); }
+      // ============ Kategorien ============
+      async function seedDefaultCategories(gid){
+        const defaults = [
+          { id:'cat-supermarkt', name:'Supermarkt', icon:'🛒', order:0 },
+          { id:'cat-baumarkt',  name:'Baumarkt',  icon:'🔨', order:1 },
+          { id:'cat-drogerie',  name:'Drogerie',  icon:'🧴', order:2 }
+        ];
+        try { for (const d of defaults){ await setDoc(doc(db,'groups',gid,'categories',d.id), { name:d.name, icon:d.icon, order:d.order, topCount:10, keepCount:50, createdAt: serverTimestamp() }); } } catch(e){}
+      }
+
+      function subscribeCategories(gid){
+        catUnsub = onSnapshot(collection(db,'groups',gid,'categories'), (snap) => {
+          if (snap.empty && !snap.metadata.fromCache){ seedDefaultCategories(gid); return; } // alte Gruppen ohne Kategorien einmalig befüllen
+          categories = [];
+          snap.forEach(d => categories.push({ id:d.id, ...d.data() }));
+          categories.sort((a,b)=> (a.order??0)-(b.order??0) || collator.compare(a.name||'', b.name||''));
+          // aktuelle Kategorie bestimmen
+          let desired = currentCategoryId;
+          if (!desired || !categories.some(c=>c.id===desired)){
+            const remembered = catMemory[gid];
+            desired = (remembered && categories.some(c=>c.id===remembered)) ? remembered : (categories[0]?.id || null);
+          }
+          if (desired !== currentCategoryId) setCurrentCategory(desired);
+          else renderTabs();
+        }, () => setStatus('error'));
+      }
+
+      function setCurrentCategory(catId){
+        if (itemsUnsub){ itemsUnsub(); itemsUnsub=null; }
+        currentCategoryId = catId || null;
+        if (currentId && currentCategoryId){ catMemory[currentId] = currentCategoryId; persistCatMemory(); }
+        renderTabs();
+        if (currentId && currentCategoryId) subscribeItems();
+        else render([]);
+      }
+
+      async function deleteCategory(cid){
+        const gid = currentId;
+        const snap = await getDocs(collection(db,'groups',gid,'categories',cid,'items'));
+        for (const d of snap.docs){ await deleteDoc(d.ref); }   // erst Artikel der Kategorie löschen
+        await deleteDoc(doc(db,'groups',gid,'categories',cid)); // dann die Kategorie
+      }
+
+      // ============ Artikel (pro Kategorie) ============
+      function itemsCol(){ return collection(db,'groups',currentId,'categories',currentCategoryId,'items'); }
+      function itemDoc(id){ return doc(db,'groups',currentId,'categories',currentCategoryId,'items',id); }
 
       function subscribeItems(){
         itemsUnsub = onSnapshot(itemsCol(), (snap) => {
@@ -389,25 +467,30 @@
           render(items);
         }, () => setStatus('error'));
       }
-
       async function addItem(){
         const name = input.value.trim();
-        if (!name || !currentId) return;
+        if (!name || !currentId || !currentCategoryId) return;
         input.value=''; input.focus();
         try { await addDoc(itemsCol(), { name, checked:false, createdAt: serverTimestamp() }); }
         catch(e){ showBanner('Konnte nicht speichern – Verbindung prüfen.'); }
       }
-      async function toggleItem(id, isDone){ try { await updateDoc(doc(db,'groups',currentId,'items',id), { checked: !isDone }); } catch(e){} }
-      async function removeItem(id){ try { await deleteDoc(doc(db,'groups',currentId,'items',id)); } catch(e){} }
+      async function toggleItem(id, isDone){ try { await updateDoc(itemDoc(id), { checked: !isDone }); } catch(e){} }
+      async function removeItem(id){ try { await deleteDoc(itemDoc(id)); } catch(e){} }
 
       // ============ Anzeige ============
       function renderApp(){
         const hasGroup = currentId && groups.some(g => g.id === currentId);
         welcome.hidden = hasGroup;
-        if (hasGroup){
-          const g = groups.find(x => x.id === currentId);
-          currentGroupName.textContent = g ? g.name : 'Gruppe';
-        }
+        if (hasGroup){ const g = groups.find(x => x.id === currentId); currentGroupName.textContent = g ? g.name : 'Gruppe'; }
+      }
+
+      function renderTabs(){
+        tabsScroll.innerHTML = categories.map(c => {
+          const active = c.id === currentCategoryId ? ' active' : '';
+          return `<button class="chip${active}" data-id="${c.id}"><span class="chip-ico">${c.icon||'📦'}</span>${esc(c.name||'Kategorie')}</button>`;
+        }).join('') + '<button class="chip chip-add" data-add="1" aria-label="Kategorie hinzufügen">＋</button>';
+        const act = tabsScroll.querySelector('.chip.active');
+        if (act) act.scrollIntoView({ inline:'center', block:'nearest' });
       }
 
       function render(items){
@@ -421,45 +504,62 @@
         doneLabel.textContent = `Erledigt · ${done.length}`;
         emptyList.hidden = items.length !== 0;
       }
-
       function rowHTML(item){
         const d = item.checked ? ' done' : '';
         const label = item.checked ? 'Wieder zu kaufen' : 'Als erledigt markieren';
-        return `<li class="item${d}" data-id="${item.id}">
-          <button class="check" aria-label="${label}"></button>
-          <span class="name">${esc(item.name)}</span>
-          <button class="del" aria-label="Löschen">×</button>
-        </li>`;
+        return `<li class="item${d}" data-id="${item.id}"><button class="check" aria-label="${label}"></button><span class="name">${esc(item.name)}</span><button class="del" aria-label="Löschen">×</button></li>`;
       }
 
       function renderGroupList(){
         groupListEl.innerHTML = groups.map(g => {
           const active = g.id === currentId;
           const check = active ? '<svg class="gi-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg>' : '';
-          return `<div class="group-item${active?' active':''}" data-id="${g.id}">
-            <div><div class="gi-name">${esc(g.name)}</div><div class="gi-code">Code ${esc(g.code)}</div></div>${check}
-          </div>`;
+          return `<div class="group-item${active?' active':''}" data-id="${g.id}"><div><div class="gi-name">${esc(g.name)}</div><div class="gi-code">Code ${esc(g.code)}</div></div>${check}</div>`;
         }).join('') || '<p style="color:var(--ink-soft);padding:8px 6px;margin:0;">Noch keine Gruppe.</p>';
       }
 
+      function renderManageList(){
+        manageList.innerHTML = categories.map(c =>
+          `<div class="manage-row" data-id="${c.id}"><span class="mr-ico">${c.icon||'📦'}</span><span class="mr-name">${esc(c.name||'Kategorie')}</span><button class="mr-edit" aria-label="Bearbeiten">✎</button></div>`
+        ).join('') || '<p style="color:var(--ink-soft);padding:8px 6px;margin:0;">Noch keine Kategorie.</p>';
+      }
+
+      // ============ Symbol-Auswahl ============
+      function renderIconGrid(){ iconGrid.innerHTML = ICONS.map(ic => `<button class="icon-opt" data-ic="${ic}">${ic}</button>`).join(''); }
+      function renderIconSelection(){ iconGrid.querySelectorAll('.icon-opt').forEach(b => b.classList.toggle('sel', b.dataset.ic === selectedIcon)); }
+
       // ============ Menüs / Dialoge ============
       function openEl(el){ backdrop.hidden=false; el.hidden=false; }
-      function closeAll(){ backdrop.hidden=true; [groupSheet,createModal,joinModal,shareModal].forEach(e => e.hidden=true); }
+      function closeAll(){ backdrop.hidden=true; [groupSheet,manageSheet,createModal,joinModal,shareModal,categoryModal].forEach(e => e.hidden=true); }
 
       function openShare(){
         const g = groups.find(x => x.id === currentId); if (!g) return;
-        shareCode.textContent = g.code;
-        qrBox.innerHTML = '';
+        shareCode.textContent = g.code; qrBox.innerHTML = '';
         const url = `${location.origin}${location.pathname}?join=${g.code}`;
-        if (typeof QRCode !== 'undefined'){
-          new QRCode(qrBox, { text:url, width:200, height:200, colorDark:'#2A2622', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.M });
-        } else {
-          qrBox.innerHTML = '<p style="color:var(--ink-soft);font-size:.85rem;text-align:center;margin:0;">QR-Code konnte nicht geladen werden – nutze den Code oben.</p>';
-        }
+        if (typeof QRCode !== 'undefined') new QRCode(qrBox, { text:url, width:200, height:200, colorDark:'#2A2622', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.M });
+        else qrBox.innerHTML = '<p style="color:var(--ink-soft);font-size:.85rem;text-align:center;margin:0;">QR-Code konnte nicht geladen werden – nutze den Code oben.</p>';
         openEl(shareModal);
       }
 
-      // ---- Verdrahtung der Knöpfe ----
+      function openCategoryModal(id){
+        if (!currentId) return;
+        closeAll();
+        editingCatId = id || null;
+        const cat = id ? categories.find(c => c.id === id) : null;
+        $('cat-modal-title').textContent = id ? 'Kategorie bearbeiten' : 'Neue Kategorie';
+        catName.value = cat ? (cat.name || '') : '';
+        catTop.value  = cat ? (cat.topCount ?? 10) : 10;
+        catKeep.value = cat ? (cat.keepCount ?? 50) : 50;
+        selectedIcon  = cat ? (cat.icon || '📦') : '🛒';
+        renderIconSelection();
+        catDelete.textContent = 'Kategorie löschen';
+        catDelete.dataset.confirm = '';
+        catDelete.hidden = !id || categories.length <= 1; // die letzte Kategorie lässt sich nicht löschen
+        openEl(categoryModal);
+        catName.focus();
+      }
+
+      // ---- Verdrahtung ----
       addBtn.addEventListener('click', addItem);
       input.addEventListener('keydown', e => { if (e.key === 'Enter') addItem(); });
 
@@ -472,6 +572,16 @@
         toggleItem(id, isDone);
       });
 
+      // Kategorie-Reiter: umschalten / hinzufügen
+      tabsScroll.addEventListener('click', (e) => {
+        if (e.target.closest('[data-add]')){ openCategoryModal(null); return; }
+        const chip = e.target.closest('.chip'); if (chip && chip.dataset.id) setCurrentCategory(chip.dataset.id);
+      });
+      $('manage-cats').addEventListener('click', () => { renderManageList(); openEl(manageSheet); });
+      $('manage-add').addEventListener('click', () => openCategoryModal(null));
+      manageList.addEventListener('click', (e) => { const row = e.target.closest('.manage-row'); if (row) openCategoryModal(row.dataset.id); });
+
+      // Gruppen
       $('group-switch').addEventListener('click', () => { renderGroupList(); openEl(groupSheet); });
       $('welcome-create').addEventListener('click', () => { closeAll(); createName.value=''; openEl(createModal); createName.focus(); });
       $('welcome-join').addEventListener('click',   () => { closeAll(); joinCodeInput.value=''; joinError.hidden=true; openEl(joinModal); joinCodeInput.focus(); });
@@ -508,22 +618,47 @@
         const g = groups.find(x => x.id === currentId); if (!g) return;
         try { await navigator.clipboard.writeText(g.code); copyCode.textContent = 'Kopiert ✓'; setTimeout(() => copyCode.textContent = 'Code kopieren', 1500); } catch(e){}
       });
+      groupListEl.addEventListener('click', (e) => { const gi = e.target.closest('.group-item'); if (gi) setCurrentGroup(gi.dataset.id); });
 
-      groupListEl.addEventListener('click', (e) => {
-        const gi = e.target.closest('.group-item'); if (!gi) return;
-        setCurrentGroup(gi.dataset.id);
+      // Kategorie speichern / löschen / Symbol
+      iconGrid.addEventListener('click', (e) => { const b = e.target.closest('.icon-opt'); if (!b) return; selectedIcon = b.dataset.ic; renderIconSelection(); });
+
+      catSave.addEventListener('click', async () => {
+        if (!currentId) return;
+        const name = catName.value.trim() || 'Kategorie';
+        const top  = clampInt(catTop.value, 1, 100, 10);
+        const keep = clampInt(catKeep.value, 0, 500, 50);
+        const icon = selectedIcon || '📦';
+        catSave.disabled = true;
+        try {
+          if (editingCatId){
+            await updateDoc(doc(db,'groups',currentId,'categories',editingCatId), { name, icon, topCount:top, keepCount:keep });
+          } else {
+            const order = categories.reduce((m,c)=>Math.max(m, c.order??0), -1) + 1;
+            const ref = await addDoc(collection(db,'groups',currentId,'categories'), { name, icon, order, topCount:top, keepCount:keep, createdAt: serverTimestamp() });
+            setCurrentCategory(ref.id);
+          }
+          closeAll();
+        } catch(e){ showBanner('Kategorie konnte nicht gespeichert werden.'); }
+        catSave.disabled = false;
+      });
+
+      catDelete.addEventListener('click', async () => {
+        if (!editingCatId || categories.length <= 1) return;
+        if (catDelete.dataset.confirm !== 'yes'){ catDelete.dataset.confirm = 'yes'; catDelete.textContent = 'Wirklich löschen? Nochmal tippen'; return; }
+        catDelete.disabled = true;
+        try { const cid = editingCatId; await deleteCategory(cid); if (currentCategoryId === cid) currentCategoryId = null; closeAll(); }
+        catch(e){ showBanner('Kategorie konnte nicht gelöscht werden.'); }
+        catDelete.disabled = false;
       });
 
       // ---- Hilfsfunktionen ----
+      function clampInt(v, min, max, fallback){ let n = parseInt(v, 10); if (isNaN(n)) n = fallback; return Math.max(min, Math.min(max, n)); }
       function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
       function showBanner(msg){ banner.textContent = msg; banner.hidden = false; }
       function setStatus(state){
-        const map = {
-          connecting:['var(--accent)','Verbinde …'], connected:['var(--ok)','Verbunden'],
-          offline:['var(--muted)','Offline – wird synchronisiert'], error:['var(--danger)','Keine Verbindung']
-        };
-        const [c,t] = map[state] || map.connecting;
-        statusDot.style.background = c; statusText.textContent = t;
+        const map = { connecting:['var(--accent)','Verbinde …'], connected:['var(--ok)','Verbunden'], offline:['var(--muted)','Offline – wird synchronisiert'], error:['var(--danger)','Keine Verbindung'] };
+        const [c,t] = map[state] || map.connecting; statusDot.style.background = c; statusText.textContent = t;
       }
     }
   </script>
