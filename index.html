@@ -625,7 +625,8 @@
           const isMe = m.uid === currentUid;
           return `<div style="display:flex;align-items:center;gap:10px;padding:8px 6px;border-radius:8px;">
             <span style="font-size:1.1rem;">${isMe?'👤':'🧑'}</span>
-            <span style="font-size:.95rem;font-weight:${isMe?'600':'400'};color:var(--ink);">${esc(m.name||'Unbekannt')}${isMe?' <span style="color:var(--ink-soft);font-weight:400;">(du)</span>':''}</span>
+            <span style="flex:1;font-size:.95rem;font-weight:${isMe?'600':'400'};color:var(--ink);">${esc(m.name||'Unbekannt')}${isMe?' <span style="color:var(--ink-soft);font-weight:400;">(du)</span>':''}</span>
+            <button class="del" data-uid="${m.uid}" aria-label="Entfernen" title="Mitglied entfernen">×</button>
           </div>`;
         }).join('');
       }
@@ -1165,6 +1166,11 @@
       $('my-name-input').addEventListener('keydown', e => { if (e.key==='Enter') $('my-name-save').click(); });
       $('my-name-input').addEventListener('focus', e => { e.target.style.borderColor='var(--accent)'; });
       $('my-name-input').addEventListener('blur',  e => { e.target.style.borderColor=''; });
+
+      $('members-list').addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-uid]'); if (!btn) return;
+        try { await deleteDoc(doc(db,'groups',currentId,'members',btn.dataset.uid)); } catch(e){}
+      });
 
       $('share-link-btn').addEventListener('click', async () => {
         const g = groups.find(x => x.id === currentId); if (!g) return;
