@@ -166,6 +166,41 @@
     .sg-card:hover{border-color:var(--accent);background:var(--accent-tint);}
     .sg-card-ico{font-size:1.5rem;line-height:1;}
     .sg-card-label{font-size:.76rem;font-weight:500;text-align:center;color:var(--ink);line-height:1.25;}
+
+    /* ---- Listentyp-Umschalter ---- */
+    .type-toggle{display:flex;gap:8px;}
+    .type-btn{flex:1;border:1.5px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:11px;padding:11px 8px;font:inherit;font-size:.9rem;font-weight:600;cursor:pointer;transition:all .15s;}
+    .type-btn.active{border-color:var(--accent);background:var(--accent-tint);color:var(--accent-deep);}
+    .type-caption{font-size:.85rem;color:var(--ink-soft);margin:2px 0 0;}
+
+    /* ---- To-do-Abschnitte ---- */
+    #section-view{padding-bottom:8px;}
+    .sec-block{margin:10px 0 2px;}
+    .sec-head{display:flex;align-items:center;gap:8px;padding:8px 6px 8px 4px;cursor:pointer;border-radius:9px;user-select:none;}
+    .sec-head:hover{background:#F3EFE8;}
+    .sec-arrow{flex:0 0 auto;width:22px;height:22px;border:none;background:transparent;color:var(--ink-soft);font-size:.8rem;cursor:pointer;padding:0;line-height:1;}
+    .sec-name{flex:1;font-family:"Bricolage Grotesque",sans-serif;font-weight:600;font-size:1.02rem;color:var(--ink);letter-spacing:-.01em;word-break:break-word;}
+    .sec-count{flex:0 0 auto;font-size:.72rem;font-weight:600;color:var(--accent-deep);background:var(--accent-tint);border-radius:999px;padding:2px 8px;min-width:20px;text-align:center;}
+    .sec-add{flex:0 0 auto;width:28px;height:28px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:8px;font-size:1.05rem;line-height:1;cursor:pointer;padding:0;transition:all .15s;}
+    .sec-add:hover{border-color:var(--accent);color:var(--accent-deep);}
+    .sec-add.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+    .sec-del{flex:0 0 auto;width:28px;height:28px;border:none;background:transparent;color:var(--muted);font-size:1.2rem;line-height:1;cursor:pointer;border-radius:8px;padding:0;transition:color .15s,background .15s;}
+    .sec-del:hover{color:var(--danger);background:#FBEDE9;}
+    .sec-head.confirming{background:#FBEDE9;}
+    .sec-confirm-yes{flex:0 0 auto;border:none;background:var(--danger);color:#fff;font:inherit;font-weight:600;font-size:.82rem;padding:6px 12px;border-radius:8px;cursor:pointer;}
+    .sec-confirm-no{flex:0 0 auto;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:600;font-size:.82rem;padding:6px 12px;border-radius:8px;cursor:pointer;}
+    .sec-items{padding-left:8px;border-left:2px solid var(--line);margin-left:14px;}
+    .sec-empty{list-style:none;color:var(--muted);font-size:.85rem;padding:8px 6px;font-style:italic;}
+    .item.todo .check{border-color:var(--accent);}
+    .item.todo.done .check{background:var(--ok);border-color:var(--ok);}
+
+    /* ---- QR-Scanner ---- */
+    #scan-overlay{position:fixed;inset:0;z-index:80;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+    #scan-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+    .scan-frame{position:relative;width:66vw;max-width:280px;aspect-ratio:1;border:3px solid #fff;border-radius:22px;box-shadow:0 0 0 100vmax rgba(0,0,0,.55);}
+    .scan-hint{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 96px);color:#fff;font-size:.95rem;font-weight:500;text-align:center;padding:0 24px;text-shadow:0 1px 3px rgba(0,0,0,.6);}
+    #scan-cancel{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 32px);background:#fff;color:var(--ink);border:none;border-radius:12px;padding:13px 28px;font:inherit;font-weight:600;font-size:1rem;cursor:pointer;}
+    .scan-btn{width:100%;margin:0 0 10px;display:flex;align-items:center;justify-content:center;gap:8px;}
   </style>
 </head>
 <body>
@@ -201,6 +236,8 @@
         <p class="empty-title">Noch nichts auf der Liste</p>
         <p class="empty-sub">Tippe unten dein erstes Produkt ein.</p>
       </div>
+
+      <div id="section-view" hidden></div>
     </main>
 
     <div class="composer">
@@ -217,6 +254,13 @@
       <button class="btn-primary" id="welcome-create">Gruppe erstellen</button>
       <button class="btn-ghost" id="welcome-join">Gruppe beitreten</button>
     </div>
+  </div>
+
+  <div id="scan-overlay" hidden>
+    <video id="scan-video" playsinline muted></video>
+    <div class="scan-frame"></div>
+    <p class="scan-hint">Richte die Kamera auf den QR-Code der Gruppe</p>
+    <button id="scan-cancel">Abbrechen</button>
   </div>
 
   <div class="backdrop" id="backdrop" hidden></div>
@@ -266,7 +310,8 @@
 
   <div class="modal" id="join-modal" hidden>
     <h2>Gruppe beitreten</h2>
-    <p>Gib den 6-stelligen Code ein – oder scanne den QR-Code einer Gruppe einfach mit der Kamera deines Handys.</p>
+    <p>Gib den 6-stelligen Code ein – oder scanne den QR-Code einer Gruppe.</p>
+    <button class="btn-ghost scan-btn" id="scan-btn">📷 QR-Code scannen</button>
     <input id="join-code" type="text" inputmode="numeric" maxlength="6" placeholder="123456" autocomplete="off" enterkeyhint="go">
     <p class="modal-error" id="join-error" hidden></p>
     <div class="modal-actions">
@@ -289,6 +334,14 @@
 
   <div class="modal" id="category-modal" hidden>
     <h2 id="cat-modal-title">Neue Kategorie</h2>
+    <div class="field" id="cat-type-field">
+      <label>Listentyp</label>
+      <div class="type-toggle" id="cat-type-toggle">
+        <button type="button" class="type-btn" data-type="shopping">🛒 Einkauf</button>
+        <button type="button" class="type-btn" data-type="todo">✓ To-do</button>
+      </div>
+      <p class="type-caption" id="cat-type-caption" hidden></p>
+    </div>
     <div class="field">
       <label for="cat-name">Name</label>
       <input id="cat-name" type="text" placeholder="z. B. Supermarkt" autocomplete="off">
@@ -297,17 +350,20 @@
       <label>Symbol</label>
       <div class="icon-grid" id="icon-grid"></div>
     </div>
-    <div class="field-row">
-      <div class="field">
-        <label for="cat-top">Top-Produkte (Mitte)</label>
-        <input id="cat-top" type="number" inputmode="numeric" min="1" max="100" value="10">
+    <div id="cat-shopping-opts">
+      <div class="field-row">
+        <div class="field">
+          <label for="cat-top">Top-Produkte (Mitte)</label>
+          <input id="cat-top" type="number" inputmode="numeric" min="1" max="100" value="10">
+        </div>
+        <div class="field">
+          <label for="cat-keep">Erledigte behalten (unten)</label>
+          <input id="cat-keep" type="number" inputmode="numeric" min="0" max="500" value="50">
+        </div>
       </div>
-      <div class="field">
-        <label for="cat-keep">Erledigte behalten (unten)</label>
-        <input id="cat-keep" type="number" inputmode="numeric" min="0" max="500" value="50">
-      </div>
+      <p class="cat-hint">„Top-Produkte" = wie viele der häufigsten Käufe in der Mitte erscheinen. „Erledigte behalten" = wie viele erledigte Produkte insgesamt sichtbar bleiben. Pro Kategorie frei einstellbar.</p>
     </div>
-    <p class="cat-hint">„Top-Produkte" = wie viele der häufigsten Käufe in der Mitte erscheinen. „Erledigte behalten" = wie viele erledigte Produkte insgesamt sichtbar bleiben. Pro Kategorie frei einstellbar.</p>
+    <p class="cat-hint" id="cat-todo-hint" hidden>To-do-Liste mit Abschnitten. Neue Aufgaben tippst du unten ein. Ein „#" davor (z. B. „#Putzen") legt einen neuen Abschnitt an. Abschnitte lassen sich ein- und ausklappen.</p>
     <button class="cat-delete" id="cat-delete" hidden>Kategorie löschen</button>
     <div class="modal-actions">
       <button class="btn-ghost" data-close>Abbrechen</button>
@@ -406,6 +462,7 @@
       const todoList=$('todo-list'), midList=$('mid-list'), doneList=$('done-list'),
             todoLabel=$('todo-label'), midDivider=$('mid-divider'), midLabel=$('mid-label'),
             doneDivider=$('done-divider'), doneLabel=$('done-label'), emptyList=$('empty-list'),
+            sectionView=$('section-view'),
             input=$('new-item'), addBtn=$('add-btn'), statusDot=$('status-dot'), statusText=$('status-text'),
             banner=$('banner'), mainEl=$('main'),
             welcome=$('welcome'), currentGroupName=$('current-group-name'),
@@ -433,6 +490,21 @@
       let editingCatId = null, selectedIcon = '🛒';
       let myName = localStorage.getItem('shopomat_name') || '';
       let members = [], membersUnsub = null, currentUid = null;
+      // To-do-Kategorien
+      const LS_COLLAPSED = 'shopomat_collapsed';
+      let collapsedSections = loadCollapsed();   // { [catId]: { [secId]: true } }
+      let activeSectionId = null;                 // Ziel-Abschnitt fürs Eingabefeld (nur im Speicher)
+      let confirmDeleteSectionId = null;          // transienter Lösch-Dialog
+      let selectedCatType = 'shopping';           // Auswahl im Kategorie-Modal
+      // QR-Scanner
+      let scanStream = null, scanRAF = null, scanDetector = null;
+
+      function loadCollapsed(){ try { return JSON.parse(localStorage.getItem(LS_COLLAPSED) || '{}'); } catch(e){ return {}; } }
+      function persistCollapsed(){ try { localStorage.setItem(LS_COLLAPSED, JSON.stringify(collapsedSections)); } catch(e){} }
+      function isCollapsed(cid, sid){ return !!(collapsedSections[cid] && collapsedSections[cid][sid]); }
+      function tMs(t){ try { return (t && typeof t.toMillis === 'function') ? t.toMillis() : 0; } catch(e){ return 0; } }
+      function currentCat(){ return categories.find(c => c.id === currentCategoryId) || null; }
+      function isTodoCat(){ const c = currentCat(); return !!c && c.type === 'todo'; }
 
       // ============ Shopdict — Übergruppen-Wörterbuch ============
       // (identische Logik wie shopdict.mjs, ohne export-Keywords)
@@ -892,6 +964,7 @@
       function setCurrentCategory(catId){
         if (itemsUnsub){ itemsUnsub(); itemsUnsub=null; }
         currentCategoryId = catId || null; currentItems = [];
+        activeSectionId = null; confirmDeleteSectionId = null;
         if (currentId && currentCategoryId){ catMemory[currentId] = currentCategoryId; persistCatMemory(); }
         renderTabs();
         if (currentId && currentCategoryId) subscribeItems(); else render([]);
@@ -918,6 +991,7 @@
         const name = input.value.trim();
         if (!name || !currentId || !currentCategoryId) return;
         input.value=''; input.focus();
+        if (isTodoCat()){ await addTodoItem(name); return; }
         try {
           // --- Dedup: Gleichnamige Einträge zusammenführen ---
           const norm = normalizeName(name);
@@ -946,10 +1020,52 @@
           }
         } catch(e){ showBanner('Konnte nicht speichern – Verbindung prüfen.'); }
       }
+
+      // --- To-do-Kategorie: Abschnitte (#) und Aufgaben anlegen ---
+      async function addTodoItem(raw){
+        try {
+          if (raw.startsWith('#')){
+            const secName = raw.slice(1).trim(); if (!secName) return;
+            const order = currentItems.filter(i => i.kind==='section').reduce((m,s)=>Math.max(m, s.order||0), -1) + 1;
+            const ref = await addDoc(itemsCol(), { kind:'section', name:secName, order, createdAt: serverTimestamp() });
+            activeSectionId = ref.id;
+          } else {
+            const sections = currentItems.filter(i => i.kind==='section').sort((a,b)=>(a.order||0)-(b.order||0));
+            let targetSecId = null;
+            if (activeSectionId && sections.some(s=>s.id===activeSectionId)) targetSecId = activeSectionId;
+            else if (sections.length) targetSecId = sections[sections.length-1].id;
+            const siblings = currentItems.filter(i => i.kind!=='section' && (i.sectionId||null)===targetSecId);
+            const order = siblings.reduce((m,t)=>Math.max(m, t.order||0), -1) + 1;
+            await addDoc(itemsCol(), { kind:'todo', name:raw, checked:false, sectionId:targetSecId, order, createdAt: serverTimestamp() });
+          }
+        } catch(e){ showBanner('Konnte nicht speichern – Verbindung prüfen.'); }
+      }
+      async function toggleTodo(item){
+        try { await updateDoc(itemDoc(item.id), { checked: !item.checked }); }
+        catch(e){ showBanner('Konnte nicht speichern – Verbindung prüfen.'); }
+      }
+      function toggleCollapse(sid){
+        if (!collapsedSections[currentCategoryId]) collapsedSections[currentCategoryId] = {};
+        const cur = collapsedSections[currentCategoryId][sid];
+        if (cur) delete collapsedSections[currentCategoryId][sid];
+        else collapsedSections[currentCategoryId][sid] = true;
+        persistCollapsed(); render(currentItems);
+      }
+      function setActiveSection(sid){ activeSectionId = sid; render(currentItems); input.focus(); }
+      async function deleteSection(secId){
+        confirmDeleteSectionId = null;
+        const todos = currentItems.filter(i => i.kind!=='section' && (i.sectionId||null)===secId);
+        try {
+          for (const t of todos){ await deleteDoc(itemDoc(t.id)); }
+          await deleteDoc(itemDoc(secId));
+        } catch(e){ showBanner('Abschnitt konnte nicht gelöscht werden.'); }
+        if (activeSectionId === secId) activeSectionId = null;
+      }
       async function removeItem(id){ try { await deleteDoc(itemDoc(id)); } catch(e){} const p=pending.get(id); if(p){ clearTimeout(p.timeout); pending.delete(id); } }
 
       function handleToggle(id){
         const item = currentItems.find(x => x.id === id); if (!item) return;
+        if (isTodoCat()){ toggleTodo(item); return; }
         if (!item.checked) buyItem(item); else unbuyItem(item);
       }
       // Kauf: sofort als erledigt markieren + zählen, Ereignis protokollieren, 10s-Fenster öffnen
@@ -985,6 +1101,21 @@
 
       function render(items){
         const cat = categories.find(c => c.id === currentCategoryId);
+        const todo = !!cat && cat.type === 'todo';
+        input.placeholder = todo ? 'Aufgabe – „#" für Abschnitt …' : 'Produkt hinzufügen …';
+
+        if (todo){
+          // Einkaufs-Container ausblenden
+          todoLabel.hidden = true; todoList.innerHTML = '';
+          midDivider.hidden = true; midList.innerHTML = '';
+          doneDivider.hidden = true; doneList.innerHTML = '';
+          emptyList.hidden = true;
+          sectionView.hidden = false;
+          renderTodo(items);
+          return;
+        }
+        sectionView.hidden = true;
+
         const topCount  = clampInt(cat?.topCount, 1, 100, 10);
         const keepCount = clampInt(cat?.keepCount, 0, 500, 50);
 
@@ -1011,6 +1142,55 @@
         doneLabel.textContent = `Erledigt · ${bottom.length}`;
 
         emptyList.hidden = items.length !== 0;
+      }
+
+      function renderTodo(items){
+        const sections = items.filter(i => i.kind === 'section').sort((a,b)=>(a.order||0)-(b.order||0) || tMs(a.createdAt)-tMs(b.createdAt));
+        const todos = items.filter(i => i.kind !== 'section');
+        const bySec = {}; const sectionless = [];
+        for (const t of todos){
+          const sid = t.sectionId || null;
+          if (sid && sections.some(s => s.id === sid)) (bySec[sid] = bySec[sid] || []).push(t);
+          else sectionless.push(t);
+        }
+        const sortT = arr => arr.sort((a,b)=>(a.order||0)-(b.order||0) || tMs(a.createdAt)-tMs(b.createdAt));
+        sortT(sectionless); Object.values(bySec).forEach(sortT);
+
+        // aktiven Abschnitt für Platzhalter spiegeln
+        const activeSec = sections.find(s => s.id === activeSectionId);
+        input.placeholder = activeSec ? `Aufgabe zu „${activeSec.name}" …` : 'Aufgabe – „#" für Abschnitt …';
+
+        let html = '';
+        if (sectionless.length){
+          html += `<ul class="list sec-items" style="border-left:none;margin-left:0;padding-left:0;">` + sectionless.map(todoRow).join('') + `</ul>`;
+        }
+        for (const s of sections){
+          const list = bySec[s.id] || [];
+          const openCount = list.filter(t => !t.checked).length;
+          const collapsed = isCollapsed(currentCategoryId, s.id);
+          const confirming = confirmDeleteSectionId === s.id;
+          html += `<div class="sec-block">`;
+          if (confirming){
+            html += `<div class="sec-head confirming"><span class="sec-name">„${esc(s.name)}" löschen?</span><button class="sec-confirm-yes" data-secyes="${s.id}">Löschen</button><button class="sec-confirm-no" data-secno="${s.id}">Abbrechen</button></div>`;
+          } else {
+            const arrow = collapsed ? '▸' : '▾';
+            const activeCls = activeSectionId === s.id ? ' active' : '';
+            html += `<div class="sec-head" data-sectoggle="${s.id}"><button class="sec-arrow" aria-label="Ein-/ausklappen">${arrow}</button><span class="sec-name">${esc(s.name)}</span>${openCount?`<span class="sec-count">${openCount}</span>`:''}<button class="sec-add${activeCls}" data-secadd="${s.id}" aria-label="Aufgabe hier hinzufügen" title="Aufgabe hier hinzufügen">＋</button><button class="sec-del" data-secdel="${s.id}" aria-label="Abschnitt löschen">×</button></div>`;
+            if (!collapsed){
+              html += `<ul class="list sec-items">` + (list.length ? list.map(todoRow).join('') : `<li class="sec-empty">Noch keine Aufgabe</li>`) + `</ul>`;
+            }
+          }
+          html += `</div>`;
+        }
+        if (!sections.length && !sectionless.length){
+          html += `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><p class="empty-title">Noch keine Aufgaben</p><p class="empty-sub">Tippe unten eine Aufgabe ein.<br>Mit „#Name" legst du einen Abschnitt an.</p></div>`;
+        }
+        sectionView.innerHTML = html;
+      }
+      function todoRow(t){
+        const d = t.checked ? ' done' : '';
+        const label = t.checked ? 'Als offen markieren' : 'Als erledigt markieren';
+        return `<li class="item todo${d}" data-id="${t.id}"><button class="check" aria-label="${label}"></button><span class="name">${esc(t.name)}</span><button class="del" aria-label="Löschen">×</button></li>`;
       }
       function rowHTML(item, showCount){
         const d = item.checked ? ' done' : '';
@@ -1042,7 +1222,7 @@
 
       // ============ Menüs / Dialoge ============
       function openEl(el){ backdrop.hidden=false; el.hidden=false; }
-      function closeAll(){ backdrop.hidden=true; statsOpen=false; [groupSheet,manageSheet,createModal,joinModal,shareModal,categoryModal,$('stats-sheet'),$('sg-picker')].forEach(e => e.hidden=true); if(pickerResolve){pickerResolve(null);pickerResolve=null;} }
+      function closeAll(){ backdrop.hidden=true; statsOpen=false; if (scanStream) stopScan(); [groupSheet,manageSheet,createModal,joinModal,shareModal,categoryModal,$('stats-sheet'),$('sg-picker')].forEach(e => e.hidden=true); if(pickerResolve){pickerResolve(null);pickerResolve=null;} }
       function openShare(){
         const g = groups.find(x => x.id === currentId); if (!g) return;
         shareCode.textContent = g.code; qrBox.innerHTML = '';
@@ -1050,6 +1230,12 @@
         if (typeof QRCode !== 'undefined') new QRCode(qrBox, { text:url, width:200, height:200, colorDark:'#2A2622', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.M });
         else qrBox.innerHTML = '<p style="color:var(--ink-soft);font-size:.85rem;text-align:center;margin:0;">QR-Code konnte nicht geladen werden – nutze den Code oben.</p>';
         openEl(shareModal);
+      }
+      function applyCatTypeUI(){
+        $('cat-type-toggle').querySelectorAll('.type-btn').forEach(b => b.classList.toggle('active', b.dataset.type === selectedCatType));
+        const isTodo = selectedCatType === 'todo';
+        $('cat-shopping-opts').hidden = isTodo;
+        $('cat-todo-hint').hidden = !isTodo;
       }
       function openCategoryModal(id){
         if (!currentId) return;
@@ -1060,10 +1246,71 @@
         catTop.value  = cat ? (cat.topCount ?? 10) : 10;
         catKeep.value = cat ? (cat.keepCount ?? 50) : 50;
         selectedIcon  = cat ? (cat.icon || '📦') : '🛒';
+        selectedCatType = cat ? (cat.type || 'shopping') : 'shopping';
+        // Typ nur bei NEUer Kategorie wählbar; beim Bearbeiten fixiert (verhindert Datenchaos)
+        const typeToggle = $('cat-type-toggle'), typeCaption = $('cat-type-caption');
+        if (id){
+          typeToggle.hidden = true; typeCaption.hidden = false;
+          typeCaption.textContent = selectedCatType === 'todo' ? 'To-do-Liste' : 'Einkaufsliste';
+        } else {
+          typeToggle.hidden = false; typeCaption.hidden = true;
+        }
+        applyCatTypeUI();
         renderIconSelection();
         catDelete.textContent = 'Kategorie löschen'; catDelete.dataset.confirm = '';
         catDelete.hidden = !id || categories.length <= 1;
         openEl(categoryModal); catName.focus();
+      }
+
+      // ============ QR-Scanner (BarcodeDetector) ============
+      function scanSupported(){ return ('BarcodeDetector' in window) && navigator.mediaDevices && navigator.mediaDevices.getUserMedia; }
+      function extractJoinCode(raw){
+        if (!raw) return null;
+        let m = String(raw).match(/[?&]join=(\d{6})/); if (m) return m[1];
+        m = String(raw).match(/(?:^|\D)(\d{6})(?:\D|$)/); if (m) return m[1];
+        return null;
+      }
+      async function startScan(){
+        if (!scanSupported()){
+          joinError.textContent = 'QR-Scannen wird von diesem Browser nicht unterstützt (z. B. Safari auf dem iPhone). Bitte den Code manuell eingeben.';
+          joinError.hidden = false; return;
+        }
+        try {
+          scanDetector = new BarcodeDetector({ formats:['qr_code'] });
+          scanStream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'environment' } });
+          const v = $('scan-video'); v.srcObject = scanStream; await v.play();
+          $('scan-overlay').hidden = false;
+          scanLoop();
+        } catch(e){
+          stopScan();
+          joinError.textContent = 'Kamera konnte nicht gestartet werden. Bitte Zugriff erlauben oder Code manuell eingeben.';
+          joinError.hidden = false;
+        }
+      }
+      function scanLoop(){
+        scanRAF = requestAnimationFrame(async () => {
+          if (!scanStream) return;
+          try {
+            const codes = await scanDetector.detect($('scan-video'));
+            if (codes && codes.length){
+              const code = extractJoinCode(codes[0].rawValue);
+              if (code){ await onScanned(code); return; }
+            }
+          } catch(e){}
+          if (scanStream) scanLoop();
+        });
+      }
+      function stopScan(){
+        if (scanRAF){ cancelAnimationFrame(scanRAF); scanRAF = null; }
+        if (scanStream){ scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+        const v = $('scan-video'); if (v){ try { v.pause(); } catch(e){} v.srcObject = null; }
+        $('scan-overlay').hidden = true;
+      }
+      async function onScanned(code){
+        stopScan();
+        joinCodeInput.value = code; joinError.hidden = true;
+        try { const g = await joinByCode(code); addOrUpdateGroup(g); setCurrentGroup(g.id); closeAll(); }
+        catch(e){ joinError.textContent = 'Diese Gruppe wurde nicht gefunden.'; joinError.hidden = false; }
       }
 
       // ---- Verdrahtung ----
@@ -1107,6 +1354,13 @@
       addBtn.addEventListener('click', addItem);
       input.addEventListener('keydown', e => { if (e.key === 'Enter') addItem(); });
       mainEl.addEventListener('click', (e) => {
+        // To-do-Abschnitts-Steuerung
+        const secAdd = e.target.closest('[data-secadd]'); if (secAdd){ setActiveSection(secAdd.dataset.secadd); return; }
+        const secDel = e.target.closest('[data-secdel]'); if (secDel){ confirmDeleteSectionId = secDel.dataset.secdel; render(currentItems); return; }
+        const secYes = e.target.closest('[data-secyes]'); if (secYes){ deleteSection(secYes.dataset.secyes); return; }
+        const secNo  = e.target.closest('[data-secno]');  if (secNo){ confirmDeleteSectionId = null; render(currentItems); return; }
+        const secTog = e.target.closest('[data-sectoggle]'); if (secTog){ toggleCollapse(secTog.dataset.sectoggle); return; }
+        // Artikel/Aufgaben
         const li = e.target.closest('.item'); if (!li) return;
         const id = li.dataset.id;
         if (e.target.closest('.del')){ removeItem(id); return; }
@@ -1151,6 +1405,11 @@
       });
       joinCodeInput.addEventListener('keydown', e => { if (e.key === 'Enter') joinConfirm.click(); });
 
+      // QR-Scanner
+      if (!scanSupported()) $('scan-btn').hidden = true;
+      $('scan-btn').addEventListener('click', startScan);
+      $('scan-cancel').addEventListener('click', stopScan);
+
       copyCode.addEventListener('click', async () => {
         const g = groups.find(x => x.id === currentId); if (!g) return;
         try { await navigator.clipboard.writeText(g.code); copyCode.textContent = 'Kopiert ✓'; setTimeout(() => copyCode.textContent = 'Code kopieren', 1500); } catch(e){}
@@ -1186,6 +1445,10 @@
       });
       groupListEl.addEventListener('click', (e) => { const gi = e.target.closest('.group-item'); if (gi) setCurrentGroup(gi.dataset.id); });
 
+      $('cat-type-toggle').addEventListener('click', (e) => {
+        const b = e.target.closest('.type-btn'); if (!b) return;
+        selectedCatType = b.dataset.type; applyCatTypeUI();
+      });
       iconGrid.addEventListener('click', (e) => { const b = e.target.closest('.icon-opt'); if (!b) return; selectedIcon = b.dataset.ic; renderIconSelection(); });
       catSave.addEventListener('click', async () => {
         if (!currentId) return;
@@ -1196,7 +1459,7 @@
         catSave.disabled = true;
         try {
           if (editingCatId){ await updateDoc(doc(db,'groups',currentId,'categories',editingCatId), { name, icon, topCount:top, keepCount:keep }); }
-          else { const order = categories.reduce((m,c)=>Math.max(m, c.order??0), -1) + 1; const ref = await addDoc(collection(db,'groups',currentId,'categories'), { name, icon, order, topCount:top, keepCount:keep, createdAt: serverTimestamp() }); setCurrentCategory(ref.id); }
+          else { const order = categories.reduce((m,c)=>Math.max(m, c.order??0), -1) + 1; const ref = await addDoc(collection(db,'groups',currentId,'categories'), { name, icon, order, type:selectedCatType, topCount:top, keepCount:keep, createdAt: serverTimestamp() }); setCurrentCategory(ref.id); }
           closeAll();
         } catch(e){ showBanner('Kategorie konnte nicht gespeichert werden.'); }
         catSave.disabled = false;
