@@ -176,6 +176,7 @@
     /* ---- To-do-Abschnitte ---- */
     #section-view{padding-bottom:8px;}
     .sec-block{margin:10px 0 2px;}
+    .sec-block.collapsed{margin:3px 0;}
     .sec-head{display:flex;align-items:center;gap:8px;padding:8px 6px 8px 4px;cursor:pointer;border-radius:9px;user-select:none;}
     .sec-head:hover{background:#F3EFE8;}
     .sec-arrow{flex:0 0 auto;width:22px;height:22px;border:none;background:transparent;color:var(--ink-soft);font-size:.8rem;cursor:pointer;padding:0;line-height:1;}
@@ -190,7 +191,15 @@
     .sec-confirm-yes{flex:0 0 auto;border:none;background:var(--danger);color:#fff;font:inherit;font-weight:600;font-size:.82rem;padding:6px 12px;border-radius:8px;cursor:pointer;}
     .sec-confirm-no{flex:0 0 auto;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:600;font-size:.82rem;padding:6px 12px;border-radius:8px;cursor:pointer;}
     .sec-items{padding-left:8px;border-left:2px solid var(--line);margin-left:14px;}
-    .sec-empty{list-style:none;color:var(--muted);font-size:.85rem;padding:8px 6px;font-style:italic;}
+    .sec-empty{list-style:none;color:var(--muted);font-size:.85rem;padding:8px 6px;font-style:italic;cursor:pointer;border-radius:8px;transition:background .15s,color .15s;}
+    .sec-empty:hover{background:#F3EFE8;color:var(--ink-soft);}
+    .sec-newbtn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin:12px 0 4px;padding:11px;border:1.5px dashed var(--line);background:transparent;color:var(--ink-soft);border-radius:12px;font:inherit;font-size:.92rem;font-weight:600;cursor:pointer;transition:border-color .15s,color .15s,background .15s;}
+    .sec-newbtn:hover{border-color:var(--accent);color:var(--accent-deep);background:var(--accent-tint);}
+    .sec-addrow{display:flex;gap:8px;align-items:center;margin:12px 0 4px;}
+    .sec-addrow input{flex:1;font-size:16px;font-family:inherit;color:var(--ink);padding:11px 14px;border:1.5px solid var(--accent);border-radius:12px;background:var(--surface);outline:none;}
+    .sec-addrow input::placeholder{color:var(--muted);}
+    .sec-addrow .sec-save{flex:0 0 auto;border:none;background:var(--accent);color:#fff;font:inherit;font-weight:600;font-size:.9rem;padding:11px 15px;border-radius:12px;cursor:pointer;}
+    .sec-addrow .sec-cancel{flex:0 0 auto;border:1.5px solid var(--line);background:var(--surface);color:var(--ink-soft);font:inherit;font-weight:600;font-size:1.1rem;line-height:1;padding:0;width:44px;height:44px;border-radius:12px;cursor:pointer;}
     .item.todo .check{border-color:var(--accent);}
     .item.todo.done .check{background:var(--ok);border-color:var(--ok);}
 
@@ -363,7 +372,7 @@
       </div>
       <p class="cat-hint">„Top-Produkte" = wie viele der häufigsten Käufe in der Mitte erscheinen. „Erledigte behalten" = wie viele erledigte Produkte insgesamt sichtbar bleiben. Pro Kategorie frei einstellbar.</p>
     </div>
-    <p class="cat-hint" id="cat-todo-hint" hidden>To-do-Liste mit Abschnitten. Neue Aufgaben tippst du unten ein. Ein „#" davor (z. B. „#Putzen") legt einen neuen Abschnitt an. Abschnitte lassen sich ein- und ausklappen.</p>
+    <p class="cat-hint" id="cat-todo-hint" hidden>To-do-Liste mit Abschnitten. Neue Aufgaben tippst du unten ein. Abschnitte legst du mit dem Button „＋ Neuer Abschnitt" an (oder als Kürzel mit „#Name"). Abschnitte lassen sich ein- und ausklappen.</p>
     <button class="cat-delete" id="cat-delete" hidden>Kategorie löschen</button>
     <div class="modal-actions">
       <button class="btn-ghost" data-close>Abbrechen</button>
@@ -494,6 +503,7 @@
       const LS_COLLAPSED = 'shopomat_collapsed';
       let collapsedSections = loadCollapsed();   // { [catId]: { [secId]: true } }
       let activeSectionId = null;                 // Ziel-Abschnitt fürs Eingabefeld (nur im Speicher)
+      let addingSection = false, sectionDraft = ''; // Inline-Eingabe „Neuer Abschnitt"
       let confirmDeleteSectionId = null;          // transienter Lösch-Dialog
       let selectedCatType = 'shopping';           // Auswahl im Kategorie-Modal
       // QR-Scanner
@@ -1040,6 +1050,17 @@
           }
         } catch(e){ showBanner('Konnte nicht speichern – Verbindung prüfen.'); }
       }
+      function startAddSection(){ addingSection = true; sectionDraft = ''; render(currentItems); }
+      function cancelAddSection(){ addingSection = false; sectionDraft = ''; render(currentItems); }
+      async function submitAddSection(){
+        const inp = document.getElementById('sec-name-input');
+        const name = inp ? inp.value : sectionDraft;
+        if (!name.trim()){ cancelAddSection(); return; }
+        addingSection = false; sectionDraft = '';
+        await createSection(name);
+        render(currentItems);
+        input.focus();   // direkt weiter Aufgaben eintippen – landen im neuen Abschnitt
+      }
       async function toggleTodo(item){
         try { await updateDoc(itemDoc(item.id), { checked: !item.checked }); }
         catch(e){ showBanner('Konnte nicht speichern – Verbindung prüfen.'); }
@@ -1052,6 +1073,14 @@
         persistCollapsed(); render(currentItems);
       }
       function setActiveSection(sid){ activeSectionId = sid; render(currentItems); input.focus(); }
+      async function createSection(rawName){
+        const secName = String(rawName || '').trim(); if (!secName) return;
+        try {
+          const order = currentItems.filter(i => i.kind==='section').reduce((m,s)=>Math.max(m, s.order||0), -1) + 1;
+          const ref = await addDoc(itemsCol(), { kind:'section', name:secName, order, createdAt: serverTimestamp() });
+          activeSectionId = ref.id;   // neue Aufgaben landen direkt im neuen Abschnitt
+        } catch(e){ showBanner('Konnte nicht speichern – Verbindung prüfen.'); }
+      }
       async function deleteSection(secId){
         confirmDeleteSectionId = null;
         const todos = currentItems.filter(i => i.kind!=='section' && (i.sectionId||null)===secId);
@@ -1169,7 +1198,7 @@
           const openCount = list.filter(t => !t.checked).length;
           const collapsed = isCollapsed(currentCategoryId, s.id);
           const confirming = confirmDeleteSectionId === s.id;
-          html += `<div class="sec-block">`;
+          html += `<div class="sec-block${collapsed ? ' collapsed' : ''}">`;
           if (confirming){
             html += `<div class="sec-head confirming"><span class="sec-name">„${esc(s.name)}" löschen?</span><button class="sec-confirm-yes" data-secyes="${s.id}">Löschen</button><button class="sec-confirm-no" data-secno="${s.id}">Abbrechen</button></div>`;
           } else {
@@ -1177,15 +1206,26 @@
             const activeCls = activeSectionId === s.id ? ' active' : '';
             html += `<div class="sec-head" data-sectoggle="${s.id}"><button class="sec-arrow" aria-label="Ein-/ausklappen">${arrow}</button><span class="sec-name">${esc(s.name)}</span>${openCount?`<span class="sec-count">${openCount}</span>`:''}<button class="sec-add${activeCls}" data-secadd="${s.id}" aria-label="Aufgabe hier hinzufügen" title="Aufgabe hier hinzufügen">＋</button><button class="sec-del" data-secdel="${s.id}" aria-label="Abschnitt löschen">×</button></div>`;
             if (!collapsed){
-              html += `<ul class="list sec-items">` + (list.length ? list.map(todoRow).join('') : `<li class="sec-empty">Noch keine Aufgabe</li>`) + `</ul>`;
+              html += `<ul class="list sec-items">` + (list.length ? list.map(todoRow).join('') : `<li class="sec-empty" data-secadd="${s.id}">Noch keine Aufgabe – zum Hinzufügen tippen</li>`) + `</ul>`;
             }
           }
           html += `</div>`;
         }
         if (!sections.length && !sectionless.length){
-          html += `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><p class="empty-title">Noch keine Aufgaben</p><p class="empty-sub">Tippe unten eine Aufgabe ein.<br>Mit „#Name" legst du einen Abschnitt an.</p></div>`;
+          html += `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><p class="empty-title">Noch keine Aufgaben</p><p class="empty-sub">Tippe unten eine Aufgabe ein –<br>oder lege mit dem Button einen Abschnitt an.</p></div>`;
+        }
+        // Abschnitt hinzufügen: Button oder Inline-Eingabe (mobilfreundliche Alternative zu „#")
+        if (addingSection){
+          html += `<div class="sec-addrow"><input id="sec-name-input" type="text" placeholder="Name des Abschnitts …" autocomplete="off" enterkeyhint="done" maxlength="60" value="${esc(sectionDraft)}"><button class="sec-save" data-secsave type="button">Anlegen</button><button class="sec-cancel" data-seccancel type="button" aria-label="Abbrechen">×</button></div>`;
+        } else {
+          html += `<button class="sec-newbtn" data-secnew type="button">＋ Neuer Abschnitt</button>`;
         }
         sectionView.innerHTML = html;
+        // Fokus auf das Inline-Feld legen, ohne bei jedem Snapshot den Cursor zu stören
+        if (addingSection){
+          const inp = document.getElementById('sec-name-input');
+          if (inp && document.activeElement !== inp){ inp.focus(); const v = inp.value; inp.value=''; inp.value=v; }
+        }
       }
       function todoRow(t){
         const d = t.checked ? ' done' : '';
@@ -1355,6 +1395,9 @@
       input.addEventListener('keydown', e => { if (e.key === 'Enter') addItem(); });
       mainEl.addEventListener('click', (e) => {
         // To-do-Abschnitts-Steuerung
+        const secNew = e.target.closest('[data-secnew]'); if (secNew){ startAddSection(); return; }
+        const secSave = e.target.closest('[data-secsave]'); if (secSave){ submitAddSection(); return; }
+        const secCancel = e.target.closest('[data-seccancel]'); if (secCancel){ cancelAddSection(); return; }
         const secAdd = e.target.closest('[data-secadd]'); if (secAdd){ setActiveSection(secAdd.dataset.secadd); return; }
         const secDel = e.target.closest('[data-secdel]'); if (secDel){ confirmDeleteSectionId = secDel.dataset.secdel; render(currentItems); return; }
         const secYes = e.target.closest('[data-secyes]'); if (secYes){ deleteSection(secYes.dataset.secyes); return; }
@@ -1365,6 +1408,13 @@
         const id = li.dataset.id;
         if (e.target.closest('.del')){ removeItem(id); return; }
         handleToggle(id);
+      });
+      // Inline-Eingabe „Neuer Abschnitt": Text merken (übersteht Snapshot-Renders) + Enter/Escape
+      mainEl.addEventListener('input', (e) => { if (e.target.id === 'sec-name-input') sectionDraft = e.target.value; });
+      mainEl.addEventListener('keydown', (e) => {
+        if (e.target.id !== 'sec-name-input') return;
+        if (e.key === 'Enter'){ e.preventDefault(); submitAddSection(); }
+        else if (e.key === 'Escape'){ e.preventDefault(); cancelAddSection(); }
       });
 
       tabsScroll.addEventListener('click', (e) => {
